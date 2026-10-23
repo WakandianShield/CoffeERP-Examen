@@ -1,0 +1,7 @@
+COFFE ERP - ENTREGA LOCAL
+
+Consulta README.md para instalar Angular, Express y MySQL.
+La documentación completa está en docs/.
+El proyecto se entrega en el repositorio CoffeERP-Examen y en ZIP.
+La configuración real se entrega por separado; copiar su .env a back-erp/.env. También se incluye back-erp/.env.example como referencia.
+No se incluyen credenciales ni dependencias instaladas.

@@ -1,0 +1,6 @@
+digraph G {graph [bgcolor="white",pad="0.22",nodesep="0.32",ranksep="0.48",fontname="Arial"];node [shape=box,fontname="Arial",fontsize=12,color="#444444",penwidth=1.1,style="rounded",margin="0.24,0.15"];edge [fontname="Arial",fontsize=10,color="#555555",arrowsize=.7];rankdir=TB;n0 [label="«componente»
+Pantalla Employees"];n1 [label="«componente»
+ApiService"];n2 [label="«componente»
+/api/employees y /api/payroll"];n3 [label="«componente»
+Middleware ADMIN"];n4 [label="«componente»
+employees y payroll"];n0->n1 [label="HTTP"];n1->n3;n3->n2;n2->n4;x0 [label="ledger: EGRESO"];n2->x0 [style=dashed];x1 [label="/api/auth/users: alta de cuenta"];n2->x1 [style=dashed];}

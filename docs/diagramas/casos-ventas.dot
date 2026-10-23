@@ -1,0 +1,4 @@
+digraph G {graph [bgcolor="white",pad="0.22",nodesep="0.32",ranksep="0.48",fontname="Arial"];node [shape=box,fontname="Arial",fontsize=12,color="#444444",penwidth=1.1,style="rounded",margin="0.24,0.15"];edge [fontname="Arial",fontsize=10,color="#555555",arrowsize=.7];rankdir=LR;a [label="«actor»
+Administrador o cajero",shape=box,style=""];subgraph cluster_sys {label="CoffeERP / Ventas";color="#777777";c0 [label="Crear carrito y cobrar",shape=ellipse,style=""];c1 [label="Verificar pago pendiente",shape=ellipse,style=""];c2 [label="Cancelar reserva no pagada",shape=ellipse,style=""];c3 [label="Descargar factura XML",shape=ellipse,style=""];c4 [label="Enviar factura por correo",shape=ellipse,style=""];}a->c0 [dir=none];a->c1 [dir=none];a->c2 [dir=none];a->c3 [dir=none];a->c4 [dir=none];p [label="«actor externo»
+PayPal Sandbox"];b [label="«actor externo»
+Brevo"];c0->p [dir=none];c1->p [dir=none];c4->b [dir=none];}

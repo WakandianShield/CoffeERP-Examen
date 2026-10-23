@@ -1,0 +1,43 @@
+[
+  {
+    "caso": "CU01",
+    "resultado": "Login incorrecto rechazado; credenciales válidas permiten acceso."
+  },
+  {
+    "caso": "CU02",
+    "producto": 6,
+    "stock": 5,
+    "resultado": "Alta de producto y ajuste persistidos."
+  },
+  {
+    "caso": "CU03",
+    "stock": 15,
+    "egreso_centavos": 20000
+  },
+  {
+    "caso": "CU04",
+    "total_centavos": 8400,
+    "stock": 13,
+    "estado": "PAGADA"
+  },
+  {
+    "caso": "CU06",
+    "xml": "factura-demostracion.xml",
+    "correo": "Pendiente de credenciales externas; mensaje real 503 visible."
+  },
+  {
+    "caso": "CU07",
+    "nomina_centavos": 900000,
+    "duplicado": "Rechazado con 409"
+  },
+  {
+    "caso": "CU08",
+    "ingresos_centavos": 8400,
+    "egresos_centavos": 927500,
+    "saldo_centavos": -919100
+  },
+  {
+    "caso": "Seguridad",
+    "resultado": "Cajero redirigido a Ventas al abrir Finanzas."
+  }
+]
