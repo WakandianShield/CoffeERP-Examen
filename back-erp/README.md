@@ -42,6 +42,13 @@ En `app.js`, las rutas de autenticación se registran antes de `app.use('/api', 
 
 La autenticación comprueba **quién hace la petición**. Los permisos comprueban **si esa cuenta puede hacer lo que pide**. El backend toma ambas decisiones antes de permitir las operaciones protegidas.
 
+### Administrador de prueba
+
+Credenciales de la cuenta ADMIN utilizada para probar el sistema:
+
+- **Correo:** `admin.prueba@coffe.test`
+- **Contraseña:** `AdminCafe2026!`
+
 ### Cómo se guarda una cuenta
 
 Las cuentas de acceso se guardan en la tabla `users`. Son independientes de los expedientes de empleados: registrar un empleado no le crea automáticamente una contraseña para entrar.
@@ -183,7 +190,7 @@ PayPal conserva sus claves externas en inglés y solo se usa en Sandbox. Una ope
 
 ## Conexión y ejecución
 
-Configura `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET` y `PORT` en `.env`. MySQL usa el puerto 3306 y la configuración horaria predeterminada del controlador. `PORT` es el puerto HTTP de Express, normalmente 3200 en este proyecto.
+Configura `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET` y `PORT` en `.env`. MySQL usa el puerto 3306 y la configuración horaria predeterminada del controlador. `PORT` es el puerto HTTP de Express, normalmente 3000 en este proyecto.
 
 Los importes se guardan como centavos enteros. Las sumas de finanzas se convierten explícitamente a número porque MySQL puede devolverlas como texto.
 

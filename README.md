@@ -176,6 +176,11 @@ Después del cobro se intenta enviar la factura XML. Si falla el correo, la vent
 
 ## Preparación y ejecución local
 
+Credenciales del administrador de prueba para iniciar sesión:
+
+- **Correo:** `admin.prueba@coffe.test`
+- **Contraseña:** `AdminCafe2026!`
+
 Requiere Node.js compatible con Angular 21 (por ejemplo, Node 22.12+ o 24), npm y MySQL. Para comprobar pagos y correo también requiere credenciales de PayPal Sandbox y Brevo.
 
 1. Crea la base y un usuario con permisos. Desde un cliente MySQL:
@@ -202,7 +207,7 @@ Requiere Node.js compatible con Angular 21 (por ejemplo, Node 22.12+ o 24), npm 
    Copy-Item .env.example .env
    ```
 
-   Completa `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET` y `PORT`. La conexión usa el puerto predeterminado de MySQL, 3306. `PORT` corresponde a Express; usa `3200` para coincidir con el proxy de Angular. Puedes generar un secreto con:
+   Completa `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET` y `PORT`. La conexión usa el puerto predeterminado de MySQL, 3306. `PORT` corresponde a Express; usa `3000` para coincidir con el proxy de Angular. Puedes generar un secreto con:
 
    ```bash
    node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
@@ -223,7 +228,7 @@ Requiere Node.js compatible con Angular 21 (por ejemplo, Node 22.12+ o 24), npm 
 
    Las variables `ADMIN_EMAIL` y `ADMIN_PASSWORD` del ejemplo sirven como referencia de preparación; el arranque actual no crea la cuenta automáticamente. Las cuentas creadas desde el sistema requieren contraseñas de 10 a 72 caracteres, con mayúscula, número y símbolo.
 
-5. Ejecuta `npm start` desde `back-erp`. En otra terminal, desde `coffeERP`, ejecuta `npm ci` y `npm start`. Abre `http://localhost:4200`; el proxy envía `/api` a `http://127.0.0.1:3200`.
+5. Ejecuta `npm start` desde `back-erp`. En otra terminal, desde `coffeERP`, ejecuta `npm ci` y `npm start`. Abre `http://localhost:4200`; el proxy envía `/api` a `http://127.0.0.1:3000`.
 
 Para integrar los proveedores, completa en `back-erp/.env`:
 

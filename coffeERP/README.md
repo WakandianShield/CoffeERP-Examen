@@ -136,7 +136,7 @@ En `src/app` se conservan `componentes`, `guards`, `models` y `services`. Cada c
 | `angular.json`                 | Configura desarrollo, compilación del navegador, recursos, estilos y pruebas.  |
 | `package.json`                 | Dependencias y comandos `start`, `build`, `watch` y `test`.                    |
 | `package-lock.json`            | Versiones exactas para reinstalar con `npm ci`.                                |
-| `proxy.conf.json`              | Reenvía `/api` al backend en `http://127.0.0.1:3200` durante el desarrollo.    |
+| `proxy.conf.json`              | Reenvía `/api` al backend en `http://127.0.0.1:3000` durante el desarrollo.    |
 | `tsconfig.json`                | Opciones compartidas de TypeScript y comprobación estricta de plantillas.      |
 | `tsconfig.app.json`            | Compila la aplicación y excluye las pruebas `.spec.ts`.                        |
 | `tsconfig.spec.json`           | Compila las pruebas de Angular con tipos de Vitest.                            |
@@ -162,6 +162,13 @@ Cada archivo `.component.ts` prepara los datos y atiende las acciones; su `.comp
 ## Autenticación y permisos
 
 La autenticación responde **quién está usando el sistema**. Los permisos responden **qué puede hacer esa cuenta**. Por ejemplo, una persona puede iniciar sesión correctamente y tener acceso a Ventas, pero no a Finanzas.
+
+### Administrador de prueba
+
+Para iniciar sesión con la cuenta de administrador de prueba:
+
+- **Correo:** `admin.prueba@coffe.test`
+- **Contraseña:** `AdminCafe2026!`
 
 ### Qué pasa al iniciar sesión
 
@@ -385,7 +392,9 @@ npm ci
 npm start
 ```
 
-Abre `http://localhost:4200` y ejecuta el backend por separado con `PORT=3200`. Si cambias ese puerto, actualiza `proxy.conf.json`. Los secretos permanecen en `back-erp/.env`.
+Abre `http://localhost:4200` y ejecuta el backend por separado con `PORT=3000`. Si cambias ese puerto, actualiza `proxy.conf.json`. Los secretos permanecen en `back-erp/.env`.
+
+Después de modificar el proxy, detén el frontend y vuelve a ejecutar `npm start` para cargar la nueva dirección del backend.
 
 `npm run build` comprueba tipos y plantillas y genera la aplicación del navegador en `dist/coffeERP/browser`. Para publicar esa salida, el servidor web debe reenviar `/api` a Express y devolver `index.html` para las rutas de Angular.
 
