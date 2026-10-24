@@ -1,0 +1,59 @@
+/* ESTILOS DEL COMPONENTE AUTENTICACION; LOS ELEMENTOS COMPARTIDOS USAN SRC/STYLES.CSS. */
+/* CENTRA EL FORMULARIO DE INICIO DE SESION Y LO ADAPTA AL ANCHO DISPONIBLE. */
+.acceso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+  background: #0d0d0d4d;
+}
+.formulario-acceso {
+  width: 420px;
+  max-width: 100%;
+  padding: 38px;
+  background: #1a1a1adb;
+  backdrop-filter: blur(40px);
+  border: 1px solid #ffffff15;
+  border-radius: 12px;
+  box-shadow:
+    0 16px 48px #0006,
+    inset 0 1px 0 #ffffff0c;
+}
+.formulario-acceso h1 {
+  color: var(--accent);
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.formulario-acceso h2 {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 400;
+  color: #aaa;
+  margin: 7px 0 4px;
+}
+.formulario-acceso > p {
+  text-align: center;
+  font-size: 12px;
+}
+.formulario-acceso form {
+  margin: 25px 0 18px;
+}
+.formulario-acceso button {
+  width: 100%;
+  padding: 12px;
+}
+.formulario-acceso > small {
+  text-align: center;
+}
+.formulario-acceso .aviso {
+  text-align: left;
+}
+@media (max-width: 500px) {
+  .formulario-acceso {
+    padding: 28px;
+  }
+}

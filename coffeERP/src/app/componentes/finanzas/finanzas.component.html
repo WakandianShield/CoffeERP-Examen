@@ -1,0 +1,86 @@
+<header>
+  <h1>Finanzas y contabilidad</h1>
+  <p>Libro de ingresos y egresos. Ventas, compras y nómina se registran automáticamente.</p>
+</header>
+<p role="status" class="aviso" [class.error]="formulario.error()" [hidden]="!formulario.mensaje()">
+  {{ formulario.mensaje() }}
+</p>
+<!-- MUESTRA INGRESOS, EGRESOS Y SU DIFERENCIA; ESTOS TOTALES INCLUYEN TODO EL HISTORIAL. -->
+<div class="indicadores">
+  <div>
+    <span>INGRESOS</span><strong>{{ formulario.moneda(datos().ingresos) }}</strong>
+  </div>
+  <div>
+    <span>EGRESOS</span><strong>{{ formulario.moneda(datos().egresos) }}</strong>
+  </div>
+  <div>
+    <span>SALDO DE MOVIMIENTOS</span
+    ><strong>{{ formulario.moneda(datos().ingresos - datos().egresos) }}</strong>
+  </div>
+</div>
+<section class="panel">
+  <h2>Otro ingreso o gasto</h2>
+  <!-- CAPTURA MOVIMIENTOS MANUALES ADICIONALES A LOS QUE GENERAN VENTAS, COMPRAS Y NOMINA. -->
+  <form #f="ngForm" (ngSubmit)="guardar()">
+    <div class="campos tres">
+      <label
+        >Tipo<select name="tipo" [(ngModel)]="movimiento.tipo">
+          <option>INGRESO</option>
+          <option>EGRESO</option>
+        </select></label
+      ><label
+        >Concepto<input
+          name="concepto"
+          [(ngModel)]="movimiento.concepto"
+          required
+          minlength="2"
+          maxlength="150" /></label
+      ><label
+        >Importe (MXN)<input
+          type="number"
+          name="importe"
+          [(ngModel)]="importe"
+          min="0.01"
+          step="0.01"
+          required
+      /></label>
+    </div>
+    <button [disabled]="f.invalid || formulario.ocupado()">Registrar movimiento</button>
+  </form>
+</section>
+<section class="panel">
+  <h2>Libro de movimientos</h2>
+  <p class="atenuado">
+    Últimos 200 movimientos. Los totales incluyen todo el historial. El saldo representa flujo de
+    caja, no utilidad fiscal.
+  </p>
+  <div class="contenedor-tabla">
+    <table>
+      <thead>
+        <tr>
+          <th>Folio</th>
+          <th>Tipo</th>
+          <th>Concepto</th>
+          <th>Importe</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- RECORRE LOS MOVIMIENTOS DEVUELTOS POR EL SERVIDOR Y MUESTRA SUS IMPORTES EN PESOS. -->
+        @for (e of datos().movimientos; track e.id) {
+          <tr>
+            <td>#{{ e.id }}</td>
+            <td>
+              <span class="etiqueta" [class.advertencia]="e.tipo === 'EGRESO'">{{ e.tipo }}</span>
+            </td>
+            <td>{{ e.concepto }}</td>
+            <td>{{ formulario.moneda(e.importeCentavos) }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="vacio">No hay movimientos registrados.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

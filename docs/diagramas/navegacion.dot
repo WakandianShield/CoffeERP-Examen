@@ -1,8 +1,0 @@
-digraph G {graph [bgcolor="white",pad="0.22",nodesep="0.32",ranksep="0.48",fontname="Arial"];node [shape=box,fontname="Arial",fontsize=12,color="#444444",penwidth=1.1,style="rounded",margin="0.24,0.15"];edge [fontname="Arial",fontsize=10,color="#555555",arrowsize=.7];rankdir=TB;login[label="/login
-Iniciar sesión"];role[label="JWT y rol",shape=diamond];shell[label="Layout CoffeERP
-Menú lateral + sesión"];v[label="/ventas
-Ventas y facturación"];c[label="/compras
-Compras y proveedores"];i[label="/inventario
-Inventario"];r[label="/rrhh
-Recursos humanos"];f[label="/finanzas
-Finanzas y contabilidad"];login->role;role->shell[label="ADMIN"];role->v[label="CAJERO"];shell->v;shell->c;shell->i;shell->r;shell->f;out[label="Cerrar sesión / expiración"];v->out [style=dashed];shell->out [style=dashed];out->login;}

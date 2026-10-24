@@ -1,0 +1,163 @@
+<header>
+  <h1>Inventario</h1>
+  <p>Productos terminados, disponibilidad y movimientos de almacén.</p>
+</header>
+<p role="status" class="aviso" [class.error]="formulario.error()" [hidden]="!formulario.mensaje()">
+  {{ formulario.mensaje() }}
+</p>
+<div class="dos-columnas">
+  <section class="panel">
+    <h2>{{ idEdicion ? 'Editar producto' : 'Nuevo producto' }}</h2>
+    <!-- EDITA LOS DATOS DEL PRODUCTO; LAS EXISTENCIAS NO SE CAMBIAN DESDE ESTE FORMULARIO. -->
+    <form #f="ngForm" (ngSubmit)="guardar()">
+      <label
+        >Nombre<input
+          name="nombre"
+          [(ngModel)]="producto.nombre"
+          required
+          minlength="2"
+          maxlength="100"
+      /></label>
+      <div class="campos">
+        <label
+          >Precio de venta (MXN)<input
+            type="number"
+            name="precio"
+            [(ngModel)]="precio"
+            min="0.01"
+            step="0.01"
+            required /></label
+        ><label
+          >Existencia mínima<input
+            type="number"
+            name="minimo"
+            [(ngModel)]="producto.minimo"
+            min="0"
+            step="1"
+            required
+        /></label>
+      </div>
+      <label class="casilla"
+        ><input type="checkbox" name="activo" [(ngModel)]="producto.activo" /> Producto
+        activo</label
+      >
+      <div class="acciones">
+        <button [disabled]="f.invalid || formulario.ocupado()">Guardar producto</button
+        ><button type="button" class="secundario" (click)="limpiar()">Limpiar</button>
+      </div>
+    </form>
+  </section>
+  <section class="panel">
+    <h2>Ajuste de inventario</h2>
+    <p class="atenuado">
+      Cantidad positiva para entrada, negativa para salida. No sustituye el registro de compras.
+    </p>
+    <!-- UNA CANTIDAD POSITIVA AGREGA UNIDADES Y UNA NEGATIVA LAS RETIRA; SIEMPRE SE PIDE UN MOTIVO. -->
+    <form #m="ngForm" (ngSubmit)="ajustar()">
+      <label
+        >Producto<select name="producto" [(ngModel)]="movimiento.idProducto" required>
+          <option [ngValue]="0" disabled>Selecciona un producto</option>
+          <!-- LAS UNIDADES DISPONIBLES SE CALCULAN RESTANDO LAS RESERVADAS A LAS EXISTENCIAS. -->
+          @for (p of productos(); track p.id) {
+            <option [ngValue]="p.id">{{ p.nombre }}</option>
+          }
+        </select></label
+      >
+      <div class="campos">
+        <label
+          >Cantidad<input
+            type="number"
+            name="cantidad"
+            [(ngModel)]="movimiento.cantidad"
+            required
+            step="1" /></label
+        ><label
+          >Motivo<input name="motivo" [(ngModel)]="movimiento.motivo" required minlength="2"
+        /></label>
+      </div>
+      <button
+        [disabled]="
+          m.invalid || !movimiento.idProducto || !movimiento.cantidad || formulario.ocupado()
+        "
+      >
+        Registrar ajuste
+      </button>
+    </form>
+  </section>
+</div>
+<section class="panel">
+  <h2>Catálogo y existencias</h2>
+  <div class="contenedor-tabla">
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Precio</th>
+          <th>Existencia</th>
+          <th>Reservado</th>
+          <th>Disponible</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of productos(); track p.id) {
+          <tr>
+            <td>
+              <b>{{ p.nombre }}</b>
+            </td>
+            <td>{{ formulario.moneda(p.precioCentavos) }}</td>
+            <td>{{ p.existencias }}</td>
+            <td>{{ p.reservado }}</td>
+            <td>{{ p.existencias - p.reservado }}</td>
+            <td>
+              <span
+                class="etiqueta"
+                [class.advertencia]="p.existencias - p.reservado <= p.minimo"
+                >{{
+                  !p.activo
+                    ? 'Inactivo'
+                    : p.existencias - p.reservado <= p.minimo
+                      ? 'Existencias bajas'
+                      : 'Disponible'
+                }}</span
+              >
+            </td>
+            <td><button class="secundario" (click)="editar(p)">Editar</button></td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="7" class="vacio">Registra tu primer producto para comenzar.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+<section class="panel">
+  <h2>Últimos movimientos</h2>
+  <div class="contenedor-tabla">
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Motivo</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (m of movimientos(); track m.id) {
+          <tr>
+            <td>{{ m.nombre }}</td>
+            <td>{{ m.cantidad > 0 ? '+' : '' }}{{ m.cantidad }}</td>
+            <td>{{ m.motivo }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3" class="vacio">Aún no hay movimientos.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

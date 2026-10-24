@@ -1,0 +1,19 @@
+/* EL CHECKOUT OCUPA EL ANCHO DEL RESUMEN DEL PEDIDO Y BLOQUEA CLICS MIENTRAS TRABAJA. */
+:host {
+  display: block;
+  margin-top: 10px;
+}
+paypal-button {
+  display: block;
+  width: 100%;
+}
+paypal-button[hidden] {
+  display: none;
+}
+paypal-button[aria-disabled='true'] {
+  pointer-events: none;
+  opacity: 0.45;
+}
+.error {
+  color: #efaaaa;
+}

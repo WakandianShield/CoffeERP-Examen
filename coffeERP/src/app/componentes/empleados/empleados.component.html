@@ -1,0 +1,192 @@
+<header>
+  <h1>Recursos humanos</h1>
+  <p>Expedientes básicos y registro mensual de salarios pagados.</p>
+</header>
+<p role="status" class="aviso" [class.error]="formulario.error()" [hidden]="!formulario.mensaje()">
+  {{ formulario.mensaje() }}
+</p>
+<div class="dos-columnas">
+  <section class="panel">
+    <h2>{{ idEdicion ? 'Editar empleado' : 'Nuevo empleado' }}</h2>
+    <!-- EL MISMO FORMULARIO SIRVE PARA CREAR UN EMPLEADO O MODIFICAR EL QUE SE SELECCIONO. -->
+    <form #f="ngForm" (ngSubmit)="guardar()">
+      <label
+        >Nombre completo<input
+          name="nombre"
+          [(ngModel)]="empleado.nombre"
+          required
+          minlength="2" /></label
+      ><label
+        >Puesto<input name="puesto" [(ngModel)]="empleado.puesto" required minlength="2"
+      /></label>
+      <div class="campos">
+        <label
+          >Correo<input
+            type="email"
+            name="correo"
+            [(ngModel)]="empleado.correo"
+            required
+            email /></label
+        ><label
+          >Salario mensual (MXN)<input
+            type="number"
+            name="salario"
+            [(ngModel)]="salario"
+            min="0.01"
+            step="0.01"
+            required
+        /></label>
+      </div>
+      <label class="casilla"
+        ><input type="checkbox" name="activo" [(ngModel)]="empleado.activo" /> Empleado
+        activo</label
+      >
+      <div class="acciones">
+        <button [disabled]="f.invalid || formulario.ocupado()">Guardar empleado</button
+        ><button type="button" class="secundario" (click)="limpiar()">Limpiar</button>
+      </div>
+    </form>
+  </section>
+  <section class="panel">
+    <h2>Registrar salario pagado</h2>
+    <p class="atenuado">Un registro por empleado y mes. Genera el egreso en finanzas.</p>
+    <!-- SELECCIONA EMPLEADO Y MES; EL IMPORTE DEL PAGO SE CONSULTA EN EL SERVIDOR. -->
+    <form #n="ngForm" (ngSubmit)="pagar()">
+      <label
+        >Empleado<select name="empleado" [(ngModel)]="idEmpleado" required>
+          <option [ngValue]="0" disabled>Selecciona un empleado</option>
+          @for (e of empleados(); track e.id) {
+            @if (e.activo) {
+              <option [ngValue]="e.id">
+                {{ e.nombre }} · {{ formulario.moneda(e.salarioCentavos) }}
+              </option>
+            }
+          }
+        </select></label
+      ><label>Periodo<input type="month" name="periodo" [(ngModel)]="periodo" required /></label
+      ><button [disabled]="n.invalid || !idEmpleado || formulario.ocupado()">
+        Registrar pago del mes
+      </button>
+    </form>
+  </section>
+</div>
+<section class="panel">
+  <h2>Personal</h2>
+  <div class="contenedor-tabla">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Puesto</th>
+          <th>Correo</th>
+          <th>Salario</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (e of empleados(); track e.id) {
+          <tr>
+            <td>{{ e.nombre }}</td>
+            <td>{{ e.puesto }}</td>
+            <td>{{ e.correo }}</td>
+            <td>{{ formulario.moneda(e.salarioCentavos) }}</td>
+            <td>{{ e.activo ? 'Activo' : 'Inactivo' }}</td>
+            <td><button class="secundario" (click)="editar(e)">Editar</button></td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="vacio">Registra a tu equipo.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+<section class="panel">
+  <h2>Historial de salarios</h2>
+  <div class="contenedor-tabla">
+    <table>
+      <thead>
+        <tr>
+          <th>Empleado</th>
+          <th>Periodo</th>
+          <th>Pagado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of nominas(); track p.id) {
+          <tr>
+            <td>{{ p.nombre }}</td>
+            <td>{{ p.periodo }}</td>
+            <td>{{ formulario.moneda(p.importeCentavos) }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3" class="vacio">Sin pagos de salarios.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+<details class="panel">
+  <summary>Crear cuenta de acceso al sistema</summary>
+  <p class="atenuado">
+    Las cuentas son independientes de los expedientes laborales. Solo el administrador puede
+    crearlas.
+  </p>
+  <!-- CAPTURA UNA CUENTA NUEVA; SOLO EL ADMINISTRADOR PUEDE GUARDARLA EN EL BACKEND. -->
+  <form #a="ngForm" (ngSubmit)="crearCuenta()">
+    <div class="campos">
+      <label
+        >Nombre<input name="nombre" [(ngModel)]="usuario.nombre" required minlength="2" /></label
+      ><label
+        >Correo<input
+          type="email"
+          name="correo"
+          [(ngModel)]="usuario.correo"
+          required
+          email /></label
+      ><label
+        >Contraseña<input
+          type="password"
+          name="contrasena"
+          [(ngModel)]="usuario.contrasena"
+          required
+          minlength="10"
+          maxlength="72"
+          autocomplete="new-password"
+        /><small>10 caracteres mínimo, mayúscula, número y símbolo.</small></label
+      ><label
+        >Rol<select name="rol" [(ngModel)]="usuario.rol">
+          <option>CAJERO</option>
+          <option>ADMIN</option>
+        </select></label
+      >
+    </div>
+    <fieldset class="modulos">
+      <legend>Módulos de la cuenta</legend>
+      @if (usuario.rol === 'ADMIN') {
+        <p class="atenuado pequeno">El administrador tiene acceso a todos los módulos.</p>
+      } @else {
+        <div class="cuadricula-modulos">
+          @for (m of opcionesModulos; track m.clave) {
+            <label class="casilla"
+              ><input
+                type="checkbox"
+                [checked]="usuario.modulos.includes(m.clave)"
+                (change)="alternarModulo(m.clave)"
+              />
+              {{ m.etiqueta }}</label
+            >
+          }
+        </div>
+        <small class="atenuado">Selecciona al menos un módulo.</small>
+      }
+    </fieldset>
+    <button [disabled]="a.invalid || formulario.ocupado() || !modulosValidos()">
+      Crear cuenta
+    </button>
+  </form>
+</details>

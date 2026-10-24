@@ -1,0 +1,133 @@
+<header>
+  <h1>Compras y proveedores</h1>
+  <p>Registra mercancía recibida y pagada. Las existencias y el egreso se actualizan juntos.</p>
+</header>
+<p role="status" class="aviso" [class.error]="formulario.error()" [hidden]="!formulario.mensaje()">
+  {{ formulario.mensaje() }}
+</p>
+<div class="dos-columnas">
+  <section class="panel">
+    <h2>Nuevo proveedor</h2>
+    <!-- CAPTURA LOS DATOS DE CONTACTO DEL NUEVO PROVEEDOR. -->
+    <form #f="ngForm" (ngSubmit)="guardarProveedor()">
+      <label
+        >Nombre<input name="nombre" [(ngModel)]="proveedor.nombre" required minlength="2" /></label
+      ><label
+        >Correo<input
+          name="correo"
+          type="email"
+          [(ngModel)]="proveedor.correo"
+          required
+          email /></label
+      ><label
+        >Teléfono<input
+          name="telefono"
+          [(ngModel)]="proveedor.telefono"
+          required
+          minlength="7" /></label
+      ><button [disabled]="f.invalid || formulario.ocupado()">Guardar proveedor</button>
+    </form>
+  </section>
+  <section class="panel">
+    <h2>Registrar compra</h2>
+    <!-- REGISTRA UN PRODUCTO RECIBIDO Y PAGADO; EL SERVIDOR ACTUALIZA INVENTARIO Y FINANZAS. -->
+    <form #c="ngForm" (ngSubmit)="guardarCompra()">
+      <label
+        >Proveedor<select name="proveedor" [(ngModel)]="idProveedor" required>
+          <option [ngValue]="0" disabled>Selecciona un proveedor</option>
+          @for (s of proveedores(); track s.id) {
+            <option [ngValue]="s.id">{{ s.nombre }}</option>
+          }
+        </select></label
+      ><label
+        >Producto<select name="producto" [(ngModel)]="idProducto" required>
+          <option [ngValue]="0" disabled>Selecciona un producto</option>
+          @for (p of productos(); track p.id) {
+            <option [ngValue]="p.id">{{ p.nombre }}</option>
+          }
+        </select></label
+      >
+      <div class="campos">
+        <label
+          >Cantidad<input
+            type="number"
+            name="cantidad"
+            [(ngModel)]="cantidad"
+            min="1"
+            max="100"
+            step="1"
+            required /></label
+        ><label
+          >Costo unitario (MXN)<input
+            type="number"
+            name="costo"
+            [(ngModel)]="costo"
+            min="0.01"
+            step="0.01"
+            required
+        /></label>
+      </div>
+      <p class="total">Total: {{ formulario.moneda(Math.round(costo * 100) * cantidad) }}</p>
+      <button [disabled]="c.invalid || !idProveedor || !idProducto || formulario.ocupado()">
+        Registrar recepción y pago
+      </button>
+    </form>
+  </section>
+</div>
+<section class="panel">
+  <h2>Compras recientes</h2>
+  <div class="contenedor-tabla">
+    <table>
+      <thead>
+        <tr>
+          <th>Compra</th>
+          <th>Proveedor</th>
+          <th>Importe</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- MUESTRA LAS COMPRAS DEVUELTAS POR EL SERVIDOR DESPUES DE GUARDAR O CARGAR LA PANTALLA. -->
+        @for (p of compras(); track p.id) {
+          <tr>
+            <td>#{{ p.id }}</td>
+            <td>{{ p.proveedor }}</td>
+            <td>{{ formulario.moneda(p.totalCentavos) }}</td>
+            <td><span class="etiqueta">Recibida y pagada</span></td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="vacio">Aún no hay compras.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+<section class="panel">
+  <h2>Proveedores</h2>
+  <div class="contenedor-tabla">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Correo</th>
+          <th>Teléfono</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of proveedores(); track s.id) {
+          <tr>
+            <td>{{ s.nombre }}</td>
+            <td>{{ s.correo }}</td>
+            <td>{{ s.telefono }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3" class="vacio">Aún no hay proveedores.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

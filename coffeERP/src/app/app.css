@@ -1,0 +1,19 @@
+/* RESERVA ESPACIO SOLO CUANDO EL MENU ESTA VISIBLE. */
+.con-menu {
+  margin-left: 250px;
+  padding: 0 30px 35px;
+  max-width: 1850px;
+  min-width: 0;
+}
+@media (max-width: 1150px) {
+  .con-menu {
+    margin-left: 220px;
+    padding: 0 22px 30px;
+  }
+}
+@media (max-width: 820px) {
+  .con-menu {
+    margin: 0;
+    padding: 0 18px 25px;
+  }
+}

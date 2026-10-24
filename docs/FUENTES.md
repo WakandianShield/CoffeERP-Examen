@@ -1,1 +1,0 @@
-Los diagramas se entregan como SVG vectorial y DOT editable (Graphviz). Los wireframes son SVG y los mockups son capturas de la interfaz. El SRS editable está en SRS.md. La portada del PDF conserva la primera página original.

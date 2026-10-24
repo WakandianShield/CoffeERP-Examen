@@ -1,5 +1,6 @@
+// INICIA ANGULAR CON EL COMPONENTE PRINCIPAL Y LA CONFIGURACION DE LA APLICACION.
 import { bootstrapApplication } from '@angular/platform-browser';
-import { appConfig } from './app/app.config';
+import { configuracionAplicacion } from './app/app.config';
 import { App } from './app/app';
 
-bootstrapApplication(App, appConfig).catch((err) => console.error(err));
+bootstrapApplication(App, configuracionAplicacion).catch((error) => console.error(error));

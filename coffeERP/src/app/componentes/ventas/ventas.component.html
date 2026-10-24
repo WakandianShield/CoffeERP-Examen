@@ -1,0 +1,184 @@
+<header>
+  <h1>Ventas y facturación</h1>
+  <p>Registra ventas, consulta los pagos y envía la factura XML.</p>
+</header>
+<p role="status" class="aviso" [class.error]="formulario.error()" [hidden]="!formulario.mensaje()">
+  {{ formulario.mensaje() }}
+</p>
+<div class="cuadricula-ventas">
+  <section>
+    <div class="encabezado-seccion">
+      <h2>Menú de la cafetería</h2>
+      <span class="atenuado">{{ productos().length }} productos</span>
+    </div>
+    <!-- RECORRE LOS PRODUCTOS Y DESHABILITA LOS QUE YA NO TIENEN UNIDADES DISPONIBLES. -->
+    <div class="cuadricula-productos">
+      @for (p of productos(); track p.id) {
+        <button
+          class="tarjeta-producto"
+          [disabled]="
+            formulario.ocupado() || p.existencias - p.reservado <= cantidadEnCarrito(p.id)
+          "
+          (click)="agregar(p)"
+        >
+          <span class="icono-producto">☕</span><b>{{ p.nombre }}</b
+          ><small>{{ p.existencias - p.reservado }} disponibles</small
+          ><span class="pie-producto"
+            ><strong>{{ formulario.moneda(p.precioCentavos) }}</strong
+            ><span>+</span></span
+          >
+        </button>
+      } @empty {
+        <div class="panel vacio">
+          No hay productos activos. Un administrador puede agregarlos en Inventario.
+        </div>
+      }
+    </div>
+  </section>
+  <!-- MUESTRA EL CARRITO, LOS DATOS DEL CLIENTE Y EL BOTON QUE ABRE PAYPAL. -->
+  <section class="panel cobro">
+    <p class="antetitulo">ORDEN ACTUAL</p>
+    <h2>Tu pedido</h2>
+    @for (detalle of carrito(); track detalle.id) {
+      <div class="linea-carrito">
+        <div>
+          <b>{{ nombre(detalle.id) }}</b
+          ><small>{{ formulario.moneda(precio(detalle.id) * detalle.cantidad) }}</small>
+        </div>
+        <div class="contador">
+          <button class="secundario" [disabled]="formulario.ocupado()" (click)="quitar(detalle.id)">
+            −</button
+          ><span>{{ detalle.cantidad }}</span
+          ><button
+            class="secundario"
+            [disabled]="formulario.ocupado()"
+            (click)="aumentar(detalle.id)"
+          >
+            +
+          </button>
+        </div>
+      </div>
+    } @empty {
+      <p class="vacio">Agrega productos del menú.</p>
+    }
+    <div class="total-cobro">
+      <span>Total MXN</span><strong>{{ formulario.moneda(total()) }}</strong>
+    </div>
+    <form #f="ngForm">
+      <fieldset [disabled]="formulario.ocupado()">
+        <label
+          >Nombre del cliente<input
+            name="cliente"
+            [(ngModel)]="cliente"
+            required
+            minlength="2"
+            maxlength="100"
+            autocomplete="name" /></label
+        ><label
+          >Correo para la factura<input
+            type="email"
+            name="correo"
+            [(ngModel)]="correo"
+            required
+            email
+            autocomplete="email"
+        /></label>
+      </fieldset>
+      <app-checkout
+        [productos]="carrito()"
+        [cliente]="cliente"
+        [correo]="correo"
+        [deshabilitado]="!!f.invalid || !carrito().length || formulario.ocupado()"
+        (ocupadoCambio)="formulario.ocupado.set($event)"
+        (pagoCompletado)="completarPago($event)"
+        (actualizar)="actualizar()"
+      />
+    </form>
+    <p class="atenuado pequeno">Se genera una factura académica XML sin validez fiscal.</p>
+  </section>
+</div>
+<section class="panel">
+  <div class="encabezado-seccion">
+    <div>
+      <h2>Historial de ventas</h2>
+      <p class="atenuado">
+        Si se interrumpe el pago, verifica su estado antes de iniciar otra venta.
+      </p>
+    </div>
+    <button class="secundario" [disabled]="formulario.ocupado()" (click)="actualizar()">
+      Actualizar
+    </button>
+  </div>
+  <div class="contenedor-tabla">
+    <table>
+      <thead>
+        <tr>
+          <th>Folio / Cliente</th>
+          <th>Total</th>
+          <th>Método</th>
+          <th>Estado</th>
+          <th>Correo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- LAS ACCIONES DISPONIBLES DEPENDEN DEL ESTADO DE PAGO Y DEL ENVIO DE LA FACTURA. -->
+        @for (s of ventas(); track s.id) {
+          <tr>
+            <td>
+              <b>{{ s.cliente }}</b
+              ><small>{{ s.id.slice(0, 8) }}</small>
+            </td>
+            <td>{{ formulario.moneda(s.totalCentavos) }}</td>
+            <td>{{ s.metodo }}</td>
+            <td>
+              <span class="etiqueta" [class.advertencia]="s.estado !== 'PAGADA'">{{
+                s.estado
+              }}</span>
+            </td>
+            <td>{{ s.estadoCorreo === 'ENVIADA' ? 'Aceptado por correo' : s.estadoCorreo }}</td>
+            <td>
+              <div class="acciones">
+                @if (s.estado === 'PAGADA') {
+                  <button class="secundario" [disabled]="formulario.ocupado()" (click)="xml(s.id)">
+                    XML
+                  </button>
+                  @if (s.estadoCorreo !== 'ENVIADA') {
+                    <button
+                      class="secundario"
+                      [disabled]="formulario.ocupado()"
+                      (click)="enviarCorreo(s.id)"
+                    >
+                      Enviar correo
+                    </button>
+                  }
+                } @else if (s.estado !== 'CANCELADA') {
+                  <button
+                    class="secundario"
+                    [disabled]="formulario.ocupado()"
+                    (click)="verificar(s.id)"
+                  >
+                    Verificar pago
+                  </button>
+                  @if (s.estado === 'CREADA' || s.estado === 'CREANDO') {
+                    <button
+                      class="secundario"
+                      [disabled]="formulario.ocupado()"
+                      (click)="cancelar(s.id)"
+                    >
+                      Cancelar reserva
+                    </button>
+                  }
+                }
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="vacio">Aquí aparecerán tus ventas.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

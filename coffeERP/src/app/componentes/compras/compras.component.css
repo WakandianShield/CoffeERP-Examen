@@ -1,0 +1,6 @@
+/* ESTILOS DEL COMPONENTE COMPRAS; LOS ELEMENTOS COMPARTIDOS USAN SRC/STYLES.CSS. */
+.total {
+  font-size: 19px;
+  font-weight: 500;
+  color: #b89b72;
+}

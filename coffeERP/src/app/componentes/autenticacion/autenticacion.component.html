@@ -1,0 +1,37 @@
+<div class="acceso">
+  <section class="formulario-acceso">
+    <h1>CoffeERP</h1>
+    <h2>Iniciar sesión</h2>
+    <p class="atenuado">Inicia sesión para acceder al sistema.</p>
+    <!-- LOS CAMPOS ACTUALIZAN LAS VARIABLES DEL COMPONENTE Y EL ENVIO EJECUTA EL INICIO DE SESION. -->
+    <form #f="ngForm" (ngSubmit)="enviar()">
+      <label
+        >Correo electrónico<input
+          type="email"
+          name="correo"
+          [(ngModel)]="correo"
+          required
+          email
+          autocomplete="username" /></label
+      ><label
+        >Contraseña<input
+          type="password"
+          name="contrasena"
+          [(ngModel)]="contrasena"
+          required
+          autocomplete="current-password" /></label
+      ><button [disabled]="f.invalid || formulario.ocupado()">
+        {{ formulario.ocupado() ? 'Comprobando…' : 'Entrar a CoffeERP' }}
+      </button>
+    </form>
+    <p
+      role="alert"
+      class="aviso"
+      [class.error]="formulario.error()"
+      [hidden]="!formulario.mensaje()"
+    >
+      {{ formulario.mensaje() }}
+    </p>
+    <small class="atenuado">Sesiones protegidas · Acceso según tu rol</small>
+  </section>
+</div>

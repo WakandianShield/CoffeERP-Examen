@@ -1,1 +1,0 @@
-Verificado con Chromium: formularios de login, producto, ajuste, proveedor, compra, venta en efectivo, descarga XML, error de correo sin claves, empleado, nómina, rechazo de duplicado, finanzas, guard de cajero y vista móvil 390px. Sin errores JavaScript. Datos ficticios.

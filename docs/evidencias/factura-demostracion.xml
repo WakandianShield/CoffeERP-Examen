@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Factura version="1.0" tipo="ACADEMICA_NO_FISCAL" folio="82938c73-4880-47f9-87bf-8edea577f58e" moneda="MXN" total="84.00" fecha="2026-10-21T19:20:35.000Z">
- <Emisor nombre="CoffeERP"/>
- <Receptor nombre="Cliente de demostración" correo="cliente@example.test"/>
- <Conceptos><Concepto producto="Chocolate caliente" cantidad="2" precioUnitario="42.00" importe="84.00"/></Conceptos>
- <Pago metodo="EFECTIVO" referencia="82938c73-4880-47f9-87bf-8edea577f58e"/>
-</Factura>

@@ -1,6 +1,0 @@
-digraph G {graph [bgcolor="white",pad="0.22",nodesep="0.32",ranksep="0.48",fontname="Arial"];node [shape=box,fontname="Arial",fontsize=12,color="#444444",penwidth=1.1,style="rounded",margin="0.24,0.15"];edge [fontname="Arial",fontsize=10,color="#555555",arrowsize=.7];rankdir=TB;n0 [label="«componente»
-Pantalla Sales"];n1 [label="«componente»
-ApiService / PaypalService"];n2 [label="«componente»
-Router sales"];n3 [label="«componente»
-Middleware JWT + propietario"];n4 [label="«componente»
-sales y sale_items"];n0->n1 [label="HTTP"];n1->n3;n3->n2;n2->n4;x0 [label="Servicio PayPal → Sandbox"];n2->x0 [style=dashed];x1 [label="Servicio factura → Brevo"];n2->x1 [style=dashed];}

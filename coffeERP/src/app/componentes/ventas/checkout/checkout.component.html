@@ -1,0 +1,9 @@
+<!-- EL SERVICIO CARGA EL SCRIPT V6 ANTES DE PREPARAR ESTE BOTON PERSONALIZADO DE PAYPAL. -->
+<paypal-button
+  #botonPaypal
+  [hidden]="!listo()"
+  [attr.disabled]="deshabilitado || procesando() ? '' : null"
+  [attr.aria-disabled]="deshabilitado || procesando()"
+  aria-label="Pagar con PayPal Sandbox"
+></paypal-button>
+<p role="status" class="atenuado pequeno" [class.error]="error()">{{ mensaje() }}</p>

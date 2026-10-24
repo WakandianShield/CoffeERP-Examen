@@ -1,0 +1,7 @@
+<!-- EL ACCESO OCUPA TODA LA PANTALLA; UNA SESION ACTIVA MUESTRA EL MENU. -->
+@if (autenticacion.estaAutenticado()) {
+  <app-menu />
+}
+<main [class.con-menu]="autenticacion.estaAutenticado()">
+  <router-outlet />
+</main>
