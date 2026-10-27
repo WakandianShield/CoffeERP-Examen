@@ -5,6 +5,8 @@ import { roleGuard } from './guards/role.guard';
 
 export const rutas: Routes = [
   // EL FORMULARIO DE ACCESO SE PUEDE ABRIR SIN HABER INICIADO SESION.
+  { path: 'terminos-y-condiciones', loadComponent: () => import('./componentes/terminos-y-condiciones/terminos-y-condiciones.component').then(m => m.TerminosYCondicionesComponent) },
+  { path: 'avisos-de-privacidad', loadComponent: () => import('./componentes/avisos-de-privacidad/avisos-de-privacidad.component').then(m => m.AvisosDePrivacidadComponent) },
   {
     path: 'iniciar-sesion',
     loadComponent: () =>

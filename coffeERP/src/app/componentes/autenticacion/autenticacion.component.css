@@ -57,3 +57,5 @@
     padding: 28px;
   }
 }
+
+.enlaces-legales{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin:20px 0;font-size:12px}.enlaces-legales a{color:var(--accent)}

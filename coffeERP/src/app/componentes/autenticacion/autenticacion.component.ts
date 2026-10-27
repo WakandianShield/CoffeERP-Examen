@@ -1,13 +1,13 @@
 // FORMULARIO DE ACCESO: ENVIA LAS CREDENCIALES Y ABRE EL PRIMER MODULO PERMITIDO.
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ServicioAutenticacion } from '../../services/autenticacion.service';
 import { EstadoFormularioService } from '../../services/estado-formulario.service';
 @Component({
   selector: 'app-autenticacion',
   providers: [EstadoFormularioService],
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './autenticacion.component.html',
   styleUrl: './autenticacion.component.css',
 })
