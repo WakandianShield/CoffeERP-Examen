@@ -4,10 +4,10 @@ const conexion = require("../config/baseDatos");
 // INICIA UNA TRANSACCION, EJECUTA LA OPERACION Y CONFIRMA O REVIERTE LOS CAMBIOS.
 async function transaccion(operacion) {
   // ESTA VERSION DE LA CONEXION PERMITE ESPERAR LAS CONSULTAS CON AWAIT.
-  const baseDatos = conexion.promise();
-  // ABRE EL GRUPO DE CAMBIOS ANTES DE EJECUTAR LA OPERACION.
-  await baseDatos.beginTransaction();
+  // RESERVA UNA CONEXION EXCLUSIVA PARA ESTA OPERACION.
+  const baseDatos = await conexion.promise().getConnection();
   try {
+    await baseDatos.beginTransaction();
     const valor = await operacion(baseDatos);
     // SI TODOS LOS PASOS FUNCIONARON, CONFIRMA LOS CAMBIOS EN MYSQL.
     await baseDatos.commit();
@@ -16,6 +16,9 @@ async function transaccion(operacion) {
     // SI ALGUN PASO FALLO, DESHACE LOS CAMBIOS DE LA TRANSACCION Y PROPAGA EL ERROR.
     await baseDatos.rollback();
     throw error;
+  } finally {
+    // DEVUELVE LA CONEXION AL GRUPO AUNQUE LA OPERACION FALLE.
+    baseDatos.release();
   }
 }
 

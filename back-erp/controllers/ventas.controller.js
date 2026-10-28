@@ -30,6 +30,13 @@ async function capturar(solicitud, respuesta) {
   respuesta.json(await ventas.capturar(solicitud.params.id, solicitud.usuario));
 }
 
+// DEVUELVE EL ESTADO REAL AUNQUE LA ORDEN TODAVIA NO ESTE APROBADA.
+async function verificar(solicitud, respuesta) {
+  respuesta.json(
+    await ventas.verificar(solicitud.params.id, solicitud.usuario),
+  );
+}
+
 // SOLICITA CANCELAR LA VENTA SI SU ESTADO PERMITE LIBERAR LA RESERVA.
 async function cancelar(solicitud, respuesta) {
   respuesta.json(await ventas.cancelar(solicitud.params.id, solicitud.usuario));
@@ -60,6 +67,7 @@ module.exports = {
   efectivo,
   conPaypal,
   capturar,
+  verificar,
   cancelar,
   xml,
   correo,

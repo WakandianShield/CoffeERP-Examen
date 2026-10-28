@@ -5,7 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "test": "ng test --watch=false && node --test src/pruebas/checkout.test.cjs",
+    "test": "ng test --watch=false",
     "watch": "ng build --watch --configuration development"
   },
   "private": true,

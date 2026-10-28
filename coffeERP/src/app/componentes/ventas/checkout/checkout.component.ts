@@ -131,8 +131,9 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
   }
 
   // ABRE EL SDK DESDE EL CLIC SIN ESPERAR PRIMERO A LA PETICION QUE CREA LA ORDEN.
-  async pagar() {
-    if (!this.sesion || this.deshabilitado || this.procesando() || !this.productos.length) return;
+  async pagar(idOrden?: string) {
+    if (!this.sesion || this.procesando()) return;
+    if (!idOrden && (this.deshabilitado || !this.productos.length)) return;
     this.zone.run(() => {
       this.cambiarOcupado(true);
       this.error.set(false);
@@ -141,9 +142,12 @@ export class CheckoutComponent implements AfterViewInit, OnDestroy {
     try {
       await this.sesion.start(
         { presentationMode: 'auto' },
-        firstValueFrom(
-          this.paypalService.crearOrden(this.productos, this.cliente, this.correo),
-        ).then((orden) => ({ orderId: orden.id })),
+        // DESDE EL HISTORIAL CONTINUA LA ORDEN EXISTENTE, SIN CREAR OTRA VENTA.
+        idOrden
+          ? Promise.resolve({ orderId: idOrden })
+          : firstValueFrom(
+              this.paypalService.crearOrden(this.productos, this.cliente, this.correo),
+            ).then((orden) => ({ orderId: orden.id })),
       );
     } catch {
       this.zone.run(() => {

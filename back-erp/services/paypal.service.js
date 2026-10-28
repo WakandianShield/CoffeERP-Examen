@@ -1,6 +1,7 @@
 // HABLA CON PAYPAL EN SU ENTORNO DE PRUEBAS Y REVISA QUE EL COBRO CORRESPONDA A LA VENTA.
 const { fallar } = require("../lib/validacion");
-const BASE_URL = process.env.PAYPAL_BASE_URL || "https://api-m.sandbox.paypal.com";
+const BASE_URL =
+  process.env.PAYPAL_BASE_URL || "https://api-m.sandbox.paypal.com";
 
 // INTERCAMBIA LAS CREDENCIALES DEL SERVIDOR POR UN TOKEN DE ACCESO DE PAYPAL.
 async function obtenerToken() {
@@ -63,11 +64,11 @@ async function paypalRequest(ruta, metodo = "GET", datos, idSolicitud) {
 
 // SOLO ACEPTA UN COBRO COMPLETADO QUE COINCIDA EN ORDEN, MONEDA E IMPORTE CON LA VENTA LOCAL.
 function verificarCaptura(orden, venta) {
+  if (!orden || !Array.isArray(orden.purchase_units)) return null;
   // JUNTA LOS COBROS DEVUELTOS POR PAYPAL; ESTA VENTA ESPERA EXACTAMENTE UNO.
-  const capturas =
-    orden.purchase_units?.flatMap(
-      (unidad) => unidad.payments?.captures || [],
-    ) || [];
+  const capturas = orden.purchase_units.flatMap((unidad) =>
+    Array.isArray(unidad?.payments?.captures) ? unidad.payments.captures : [],
+  );
   if (
     orden.id !== venta.idPaypal ||
     orden.status !== "COMPLETED" ||
@@ -76,6 +77,7 @@ function verificarCaptura(orden, venta) {
     return null;
   const captura = capturas[0];
   if (
+    !captura ||
     captura.status !== "COMPLETED" ||
     !captura.id ||
     captura.amount?.currency_code !== "MXN" ||
@@ -84,4 +86,29 @@ function verificarCaptura(orden, venta) {
     return null;
   return captura;
 }
-module.exports = { paypalRequest, verificarCaptura };
+// SOLO PERMITE LIBERAR UNA RESERVA CON UNA RESPUESTA COMPLETA Y SIN COBROS NI AUTORIZACIONES.
+function ordenSinPago(orden, venta) {
+  return (
+    orden?.id === venta.idPaypal &&
+    ["CREATED", "SAVED", "PAYER_ACTION_REQUIRED", "VOIDED"].includes(
+      orden.status,
+    ) &&
+    Array.isArray(orden.purchase_units) &&
+    orden.purchase_units.length > 0 &&
+    orden.purchase_units.every((unidad) => {
+      if (!unidad || typeof unidad !== "object") return false;
+      const pagos = unidad.payments;
+      if (pagos === undefined) return true;
+      return (
+        pagos &&
+        typeof pagos === "object" &&
+        (pagos.captures === undefined ||
+          (Array.isArray(pagos.captures) && pagos.captures.length === 0)) &&
+        (pagos.authorizations === undefined ||
+          (Array.isArray(pagos.authorizations) &&
+            pagos.authorizations.length === 0))
+      );
+    })
+  );
+}
+module.exports = { paypalRequest, verificarCaptura, ordenSinPago };

@@ -18,7 +18,7 @@ async function buscarPorCorreo(correo) {
 // COMPARA LA CONTRASENA CON SU HASH Y DEVUELVE UN PERFIL SEGURO CON UN TOKEN QUE DURA UNA HORA.
 async function iniciarSesion(correo, contrasena) {
   const correoValidado = validar.correo(correo);
-  if (typeof contrasena !== "string" || contrasena.length > 72)
+  if (typeof contrasena !== "string")
     validar.fallar("Credenciales incorrectas", 401);
   const usuario = await buscarPorCorreo(correoValidado);
   if (!usuario || !(await bcrypt.compare(contrasena, usuario.hashContrasena)))

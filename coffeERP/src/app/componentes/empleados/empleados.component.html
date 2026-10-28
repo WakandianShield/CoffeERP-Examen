@@ -154,10 +154,9 @@
           name="contrasena"
           [(ngModel)]="usuario.contrasena"
           required
-          minlength="10"
-          maxlength="72"
+          minlength="3"
           autocomplete="new-password"
-        /><small>10 caracteres mínimo, mayúscula, número y símbolo.</small></label
+        /><small>Mínimo 3 caracteres.</small></label
       ><label
         >Rol<select name="rol" [(ngModel)]="usuario.rol">
           <option>CAJERO</option>

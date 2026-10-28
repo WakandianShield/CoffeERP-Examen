@@ -5,6 +5,7 @@ export interface Venta {
   correo: string;
   totalCentavos: number;
   metodo: string;
+  idPaypal?: string | null;
   estado: string;
   estadoCorreo: string;
   fechaCreacion: string;

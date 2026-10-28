@@ -86,6 +86,7 @@ src/
             paypal.service.ts
         model/
           producto-carrito.model.ts
+          resultado-operacion-venta.model.ts
           resultado-pago.model.ts
           venta.model.ts
         servicios/
@@ -110,8 +111,7 @@ src/
   index.html
   main.ts
   pruebas/
-    checkout.test.cjs
-    guards.spec.ts
+    ventas.spec.ts
   styles.css
 public/
   favicon.ico
@@ -172,6 +172,8 @@ Para iniciar sesión con la cuenta de administrador de prueba:
 
 ### Qué pasa al iniciar sesión
 
+Al crear una cuenta en Empleados, la contraseña solo necesita un mínimo de 3 caracteres. No se exige combinar letras, números ni símbolos.
+
 1. La persona escribe su correo y contraseña en `/iniciar-sesion`. El formulario está en `componentes/autenticacion/autenticacion.component.*`.
 2. El componente llama a `ServicioAutenticacion.iniciarSesion(correo, contrasena)`, definido en `services/autenticacion.service.ts`.
 3. El servicio envía esos datos a POST `/api/autenticacion/iniciar-sesion`. POST significa que manda información al servidor para realizar una acción.
@@ -225,28 +227,29 @@ Esto permite entrar a ADMIN o a un CAJERO que tenga FINANZAS. Un CAJERO con solo
 
 Las interfaces describen datos; las validaciones reales se realizan en el backend. Las rutas de la tabla parten de `src/app`. `models` conserva únicamente usuario, sesión, módulos y producto, que se comparten entre pantallas. Cada modelo específico está en la carpeta `model` del componente que lo utiliza:
 
-| Archivo                                                           | Datos que describe                                                           |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `models/usuario.model.ts`                                         | Perfil público de la cuenta, rol y módulos; sin contraseña ni hash.          |
-| `componentes/empleados/model/cuenta.model.ts`                     | Datos enviados para crear una cuenta, incluida la contraseña inicial.        |
-| `models/sesion.model.ts`                                          | Token y perfil devueltos por el acceso.                                      |
-| `models/modulo.model.ts`                                          | Nombres válidos de módulos y lista compartida de opciones.                   |
-| `models/producto.model.ts`                                        | Catálogo, precio en centavos, existencias, reservas y mínimo.                |
-| `componentes/productos/model/movimiento-inventario.model.ts`      | Cantidad y motivo de una entrada o salida de productos.                      |
-| `componentes/compras/model/proveedor.model.ts`                    | Datos de contacto del proveedor.                                             |
-| `componentes/compras/model/compra.model.ts`                       | Proveedor, importe y fecha de una compra.                                    |
-| `componentes/empleados/model/empleado.model.ts`                   | Expediente laboral y salario en centavos.                                    |
-| `componentes/empleados/model/nomina.model.ts`                     | Empleado, periodo e importe del salario pagado.                              |
-| `componentes/finanzas/model/movimiento-contable.model.ts`         | Ingreso o egreso, concepto, importe y fecha.                                 |
-| `componentes/finanzas/model/resumen-finanzas.model.ts`            | Movimientos y totales de ingresos y egresos.                                 |
-| `componentes/ventas/model/venta.model.ts`                         | Venta del historial, cliente, total y estados de pago y correo.              |
-| `componentes/ventas/model/producto-carrito.model.ts`              | ID de producto y cantidad; el precio real lo consulta Express.               |
-| `componentes/ventas/checkout/model/orden-paypal.model.ts`         | ID externo, folio local de venta y total de la orden.                        |
-| `componentes/ventas/model/resultado-pago.model.ts`                | Mensaje, `orderId`, `captureId`, estado, folio de venta y estado del correo. |
-| `componentes/ventas/checkout/model/configuracion-paypal.model.ts` | ID público de cliente y modo Sandbox.                                        |
-| `componentes/ventas/checkout/model/paypal-global.model.ts`        | Objeto `window.paypal` publicado por el SDK.                                 |
-| `componentes/ventas/checkout/model/sdk-paypal.model.ts`           | Métodos del SDK para elegibilidad y creación de la sesión.                   |
-| `componentes/ventas/checkout/model/sesion-paypal.model.ts`        | Método `start` para abrir el pago y recibir la promesa de orden.             |
+| Archivo                                                           | Datos que describe                                                                   |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `models/usuario.model.ts`                                         | Perfil público de la cuenta, rol y módulos; sin contraseña ni hash.                  |
+| `componentes/empleados/model/cuenta.model.ts`                     | Datos enviados para crear una cuenta, incluida la contraseña inicial.                |
+| `models/sesion.model.ts`                                          | Token y perfil devueltos por el acceso.                                              |
+| `models/modulo.model.ts`                                          | Nombres válidos de módulos y lista compartida de opciones.                           |
+| `models/producto.model.ts`                                        | Catálogo, precio en centavos, existencias, reservas y mínimo.                        |
+| `componentes/productos/model/movimiento-inventario.model.ts`      | Cantidad y motivo de una entrada o salida de productos.                              |
+| `componentes/compras/model/proveedor.model.ts`                    | Datos de contacto del proveedor.                                                     |
+| `componentes/compras/model/compra.model.ts`                       | Proveedor, importe y fecha de una compra.                                            |
+| `componentes/empleados/model/empleado.model.ts`                   | Expediente laboral y salario en centavos.                                            |
+| `componentes/empleados/model/nomina.model.ts`                     | Empleado, periodo e importe del salario pagado.                                      |
+| `componentes/finanzas/model/movimiento-contable.model.ts`         | Ingreso o egreso, concepto, importe y fecha.                                         |
+| `componentes/finanzas/model/resumen-finanzas.model.ts`            | Movimientos y totales de ingresos y egresos.                                         |
+| `componentes/ventas/model/venta.model.ts`                         | Venta del historial, cliente, total y estados de pago y correo.                      |
+| `componentes/ventas/model/producto-carrito.model.ts`              | ID de producto y cantidad; el precio real lo consulta Express.                       |
+| `componentes/ventas/checkout/model/orden-paypal.model.ts`         | ID externo, folio local de venta y total de la orden.                                |
+| `componentes/ventas/model/resultado-operacion-venta.model.ts`     | Estado y mensaje de verificar o cancelar; admite resultados sin pagar y en revisión. |
+| `componentes/ventas/model/resultado-pago.model.ts`                | Mensaje, `orderId`, `captureId`, estado, folio de venta y estado del correo.         |
+| `componentes/ventas/checkout/model/configuracion-paypal.model.ts` | ID público de cliente y modo Sandbox.                                                |
+| `componentes/ventas/checkout/model/paypal-global.model.ts`        | Objeto `window.paypal` publicado por el SDK.                                         |
+| `componentes/ventas/checkout/model/sdk-paypal.model.ts`           | Métodos del SDK para elegibilidad y creación de la sesión.                           |
+| `componentes/ventas/checkout/model/sesion-paypal.model.ts`        | Método `start` para abrir el pago y recibir la promesa de orden.                     |
 
 ## Un archivo por servicio
 
@@ -290,6 +293,8 @@ Los modelos propios de PayPal están en `checkout/model`. El carrito y el result
 
 ### Proceso paso a paso
 
+El botón **Pagar** de una venta CREADA en el historial continúa su orden de PayPal existente. Reintentar el mismo pedido desde el carrito también reutiliza la reserva pendiente, sin insertar otra venta. **Verificar pago** actualiza el estado de esa misma venta; cuando queda PAGADA se limpia el carrito para no cobrarlo de nuevo por accidente.
+
 1. **Preparar el botón.** El checkout consulta GET `/api/paypal/configuracion`. Recibe el ID público de cliente y carga el script de PayPal. Comprueba que PayPal esté disponible para cobrar en MXN y prepara la sesión de pago. El secreto de PayPal permanece en el backend.
 2. **Armar la compra.** La persona elige productos y cantidades y escribe el nombre y correo del cliente. El importe de la pantalla sirve para mostrar el total; Express lo calcula otra vez con los precios de MySQL.
 3. **Crear la orden.** Al pulsar PayPal, `crearOrden(productos, cliente, correo)` envía POST `/api/paypal/orden`. Solo manda IDs y cantidades de productos, además del cliente y correo; no fija sus precios. El backend guarda una venta, aparta las unidades y crea la orden en PayPal.
@@ -329,10 +334,24 @@ sequenceDiagram
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Se cierra o cancela la ventana de PayPal | El carrito se conserva. El aviso del navegador no libera por sí solo la reserva. Si el historial ofrece **Cancelar reserva**, se puede solicitar; Express comprueba antes el estado real de PayPal. |
 | El resultado del cobro es incierto       | La venta puede quedar en REVISION y conservar sus unidades apartadas. Usa **Verificar pago** antes de iniciar otra compra. Un error de conexión no demuestra que el cobro haya fallado.             |
-| Se pulsa **Verificar pago**              | Se envía POST `/api/ventas/:id/capturar` con el folio local. El servidor consulta PayPal y puede confirmar un cobro anterior; evita repetir el descuento de productos y el ingreso.                 |
+| Se pulsa **Verificar pago**              | Se envía POST `/api/ventas/:id/verificar` con el folio local. El servidor consulta PayPal y puede confirmar un cobro anterior; evita repetir el descuento de productos y el ingreso.                |
 | La venta ya está PAGADA                  | El historial ofrece la factura XML y, si falta el envío, el botón de correo. El estado del correo se comprueba por separado.                                                                        |
 
-El sistema no libera automáticamente una reserva con pago incierto. La pantalla solo ofrece **Cancelar reserva** para ventas CREANDO o CREADA; para REVISION ofrece verificar. Esta cancelación no es una devolución de un pago completado.
+La pantalla ofrece **Cancelar reserva** en CREANDO, CREADA y REVISION. El servidor solo libera las unidades si comprueba que PayPal no tiene capturas ni autorizaciones y que la orden está sin pagar. Si la comunicación falla o existe un pago aprobado, pendiente o completado, conserva la reserva. Una venta PAGADA no se puede cancelar desde ese botón: esta operación no realiza devoluciones.
+
+### Qué devuelve Verificar pago
+
+Verificar ya no significa siempre que exista un pago. El botón muestra el mensaje real que devuelve el servidor y vuelve a consultar las existencias y el historial, incluso si la petición falló.
+
+| Resultado de PayPal                                        | Resultado en CoffeERP                                                                                                             |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Orden creada o pendiente de aprobación, sin cobros         | CREADA: informa que todavía no está aprobada y permite solicitar la cancelación. Una REVISION antigua puede volver a este estado. |
+| Orden aprobada                                             | Solicita la captura y confirma PAGADA solo si coinciden orden, moneda e importe.                                                  |
+| Cobro ya completado                                        | Recupera el resultado sin cobrar otra vez y confirma inventario e ingreso una sola vez.                                           |
+| Orden anulada, sin cobros                                  | CANCELADA: libera la reserva.                                                                                                     |
+| Datos incompletos, cobro pendiente o error de comunicación | REVISION: conserva los productos para revisar después.                                                                            |
+
+Si se pulsa **Cancelar reserva** varias veces, solo se liberan las unidades en la primera cancelación. Si coincide con una captura, el backend procesa una operación antes que la otra para evitar descontar o liberar dos veces los productos.
 
 ### Dos tokens con funciones diferentes
 
@@ -398,6 +417,6 @@ Después de modificar el proxy, detén el frontend y vuelve a ejecutar `npm star
 
 `npm run build` comprueba tipos y plantillas y genera la aplicación del navegador en `dist/coffeERP/browser`. Para publicar esa salida, el servidor web debe reenviar `/api` a Express y devolver `index.html` para las rutas de Angular.
 
-`npm test` ejecuta nueve pruebas de guards y navegación en `src/pruebas/guards.spec.ts` y ocho de checkout en `src/pruebas/checkout.test.cjs`. Comprueban restauración de sesión, rechazo de tokens, roles, módulos, menú, cierre de sesión y creación y captura del pago. HTTP y SDK se simulan: no se realizan cobros reales.
+`npm test` ejecuta `src/pruebas/ventas.spec.ts`: nueve pruebas del historial, sus mensajes, las existencias, la cancelación desde REVISION y el bloqueo de clics repetidos. Las peticiones y el checkout se simulan: no se inician los servidores de la aplicación, no se abre PayPal y no se realizan cobros.
 
 `public` y `src` son recursos y código fuente. `npm ci` genera `node_modules`; Angular puede generar `.angular`, y la compilación genera `dist`. Estas carpetas están excluidas de Git y se pueden regenerar. Los comentarios del código están EN MAYUSCULAS Y SIN ACENTOS.

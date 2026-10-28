@@ -26,17 +26,10 @@ function entero(valor, etiqueta, minimo = 1, maximo = 100000000) {
     fallar(`${etiqueta}: entero fuera de rango`);
   return valor;
 }
-// EXIGE ENTRE 10 Y 72 CARACTERES, CON MAYUSCULA, NUMERO Y SIMBOLO.
+// SOLO EXIGE UN MINIMO DE TRES CARACTERES, SIN OBLIGAR A COMBINAR TIPOS DE CARACTERES.
 function contrasena(valor) {
-  if (
-    typeof valor !== "string" ||
-    valor.length < 10 ||
-    valor.length > 72 ||
-    !/[A-Z]/.test(valor) ||
-    !/[0-9]/.test(valor) ||
-    !/[^A-Za-z0-9]/.test(valor)
-  )
-    fallar("Contraseña: 10-72 caracteres, mayúscula, número y símbolo");
+  if (typeof valor !== "string" || valor.length < 3)
+    fallar("La contraseña debe tener al menos 3 caracteres");
   return valor;
 }
 // REVISA PRODUCTOS Y CANTIDADES, RECHAZA REPETIDOS Y LOS ORDENA POR ID ANTES DE PROCESARLOS.

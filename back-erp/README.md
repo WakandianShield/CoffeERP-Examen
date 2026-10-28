@@ -53,7 +53,9 @@ Credenciales de la cuenta ADMIN utilizada para probar el sistema:
 
 Las cuentas de acceso se guardan en la tabla `users`. Son independientes de los expedientes de empleados: registrar un empleado no le crea automáticamente una contraseña para entrar.
 
-La contraseña de una cuenta nueva debe tener entre 10 y 72 caracteres, al menos una mayúscula, un número y un símbolo. Estas reglas se comprueban en el servidor, además de lo que pida el formulario.
+La contraseña de una cuenta nueva debe tener al menos 3 caracteres. No se exige combinar mayúsculas, minúsculas, números ni símbolos. El formulario y el servidor aplican el mismo mínimo.
+
+Si una base antigua no tiene la columna `users.modules`, crear una cuenta falla con `ER_BAD_FIELD_ERROR`. Ejecuta `sql/actualizar-usuarios.sql` en esa base para añadir los permisos sin borrar usuarios ni cambiar contraseñas. Se puede ejecutar de nuevo sin duplicar la columna.
 
 Al crear una cuenta mediante POST `/api/autenticacion/usuarios`, se exige una sesión de ADMIN. `registrarUsuario()`, en `services/autenticacion.service.js`, valida los datos y usa bcrypt para generar un **hash** de la contraseña: un valor calculado que permite comprobarla después sin guardar el texto original. El rol debe ser ADMIN o CAJERO. ADMIN recibe todos los módulos; CAJERO recibe los módulos válidos solicitados y, si no queda ninguno, VENTAS.
 
@@ -101,35 +103,36 @@ GET consulta información; POST crea un registro o solicita una acción; PUT mod
 
 Todas las direcciones de esta tabla incluyen el prefijo `/api`. ADMIN supera los permisos por módulo y puede consultar ventas de cualquier propietario.
 
-| Método | Endpoint                            | Permiso adicional a la sesión | Resultado                                     |
-| ------ | ----------------------------------- | ----------------------------- | --------------------------------------------- |
-| POST   | `/api/autenticacion/iniciar-sesion` | Público; no requiere sesión   | Token y perfil.                               |
-| GET    | `/api/autenticacion/perfil`         | Ninguno                       | Perfil del token verificado.                  |
-| POST   | `/api/autenticacion/usuarios`       | ADMIN                         | Nueva cuenta.                                 |
-| GET    | `/api/productos`                    | Ninguno                       | Catálogo, existencias y reservas.             |
-| POST   | `/api/productos`                    | INVENTARIO                    | Nuevo producto.                               |
-| PUT    | `/api/productos/:id`                | INVENTARIO                    | Producto actualizado.                         |
-| GET    | `/api/inventario`                   | INVENTARIO                    | Historial de movimientos.                     |
-| POST   | `/api/inventario`                   | INVENTARIO                    | Ajuste de unidades con motivo.                |
-| GET    | `/api/proveedores`                  | COMPRAS                       | Lista de proveedores.                         |
-| POST   | `/api/proveedores`                  | COMPRAS                       | Nuevo proveedor.                              |
-| GET    | `/api/compras`                      | COMPRAS                       | Últimas compras.                              |
-| POST   | `/api/compras`                      | COMPRAS                       | Compra, entrada de inventario y egreso.       |
-| GET    | `/api/empleados`                    | RRHH                          | Expedientes laborales.                        |
-| POST   | `/api/empleados`                    | RRHH                          | Nuevo empleado.                               |
-| PUT    | `/api/empleados/:id`                | RRHH                          | Expediente actualizado.                       |
-| GET    | `/api/nomina`                       | RRHH                          | Historial de salarios pagados.                |
-| POST   | `/api/nomina`                       | RRHH                          | Salario del periodo y egreso.                 |
-| GET    | `/api/finanzas`                     | FINANZAS                      | Movimientos y totales.                        |
-| POST   | `/api/finanzas`                     | FINANZAS                      | Movimiento manual.                            |
-| GET    | `/api/ventas/configuracion`         | VENTAS                        | ID público de PayPal y modo de pruebas.       |
-| GET    | `/api/ventas`                       | VENTAS                        | Ventas permitidas para la cuenta.             |
-| POST   | `/api/ventas/efectivo`              | VENTAS                        | Venta pagada en efectivo.                     |
-| POST   | `/api/ventas/paypal`                | VENTAS                        | Reserva y orden PayPal.                       |
-| POST   | `/api/ventas/:id/capturar`          | VENTAS y propietario          | Captura o recuperación del resultado de pago. |
-| POST   | `/api/ventas/:id/cancelar`          | VENTAS y propietario          | Cancelación si el estado lo permite.          |
-| GET    | `/api/ventas/:id/xml`               | VENTAS y propietario          | XML de una venta pagada.                      |
-| POST   | `/api/ventas/:id/correo`            | VENTAS y propietario          | Envío de factura de una venta pagada.         |
+| Método | Endpoint                            | Permiso adicional a la sesión | Resultado                                                                       |
+| ------ | ----------------------------------- | ----------------------------- | ------------------------------------------------------------------------------- |
+| POST   | `/api/autenticacion/iniciar-sesion` | Público; no requiere sesión   | Token y perfil.                                                                 |
+| GET    | `/api/autenticacion/perfil`         | Ninguno                       | Perfil del token verificado.                                                    |
+| POST   | `/api/autenticacion/usuarios`       | ADMIN                         | Nueva cuenta.                                                                   |
+| GET    | `/api/productos`                    | Ninguno                       | Catálogo, existencias y reservas.                                               |
+| POST   | `/api/productos`                    | INVENTARIO                    | Nuevo producto.                                                                 |
+| PUT    | `/api/productos/:id`                | INVENTARIO                    | Producto actualizado.                                                           |
+| GET    | `/api/inventario`                   | INVENTARIO                    | Historial de movimientos.                                                       |
+| POST   | `/api/inventario`                   | INVENTARIO                    | Ajuste de unidades con motivo.                                                  |
+| GET    | `/api/proveedores`                  | COMPRAS                       | Lista de proveedores.                                                           |
+| POST   | `/api/proveedores`                  | COMPRAS                       | Nuevo proveedor.                                                                |
+| GET    | `/api/compras`                      | COMPRAS                       | Últimas compras.                                                                |
+| POST   | `/api/compras`                      | COMPRAS                       | Compra, entrada de inventario y egreso.                                         |
+| GET    | `/api/empleados`                    | RRHH                          | Expedientes laborales.                                                          |
+| POST   | `/api/empleados`                    | RRHH                          | Nuevo empleado.                                                                 |
+| PUT    | `/api/empleados/:id`                | RRHH                          | Expediente actualizado.                                                         |
+| GET    | `/api/nomina`                       | RRHH                          | Historial de salarios pagados.                                                  |
+| POST   | `/api/nomina`                       | RRHH                          | Salario del periodo y egreso.                                                   |
+| GET    | `/api/finanzas`                     | FINANZAS                      | Movimientos y totales.                                                          |
+| POST   | `/api/finanzas`                     | FINANZAS                      | Movimiento manual.                                                              |
+| GET    | `/api/ventas/configuracion`         | VENTAS                        | ID público de PayPal y modo de pruebas.                                         |
+| GET    | `/api/ventas`                       | VENTAS                        | Ventas permitidas para la cuenta.                                               |
+| POST   | `/api/ventas/efectivo`              | VENTAS                        | Venta pagada en efectivo.                                                       |
+| POST   | `/api/ventas/paypal`                | VENTAS                        | Reserva y orden PayPal.                                                         |
+| POST   | `/api/ventas/:id/capturar`          | VENTAS y propietario          | Captura o recuperación del resultado de pago.                                   |
+| POST   | `/api/ventas/:id/verificar`         | VENTAS y propietario          | Estado real; recupera o captura un pago aprobado sin asumir que ya esté pagado. |
+| POST   | `/api/ventas/:id/cancelar`          | VENTAS y propietario          | Cancelación si el estado lo permite.                                            |
+| GET    | `/api/ventas/:id/xml`               | VENTAS y propietario          | XML de una venta pagada.                                                        |
+| POST   | `/api/ventas/:id/correo`            | VENTAS y propietario          | Envío de factura de una venta pagada.                                           |
 
 ## Principales métodos del código
 
@@ -145,18 +148,18 @@ El checkout de Angular utiliza estas rutas adicionales, todas protegidas por JWT
 
 `obtenerToken()` de `paypal.service.js` obtiene el token privado con autenticación Basic y `grant_type=client_credentials`. `paypalRequest()` lo utiliza como Bearer para crear, consultar o capturar órdenes en `/v2/checkout/orders`. Las peticiones tienen un tiempo límite y los fallos de red se devuelven como 502. La captura guarda REVISION antes de salir al proveedor.
 
-| Archivo                    | Métodos                                                                       | Qué hacen                                                                         |
-| -------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `autenticacion.service.js` | `buscarPorCorreo`, `iniciarSesion`, `registrarUsuario`                        | Buscan cuentas activas, validan credenciales y crean cuentas con hash y permisos. |
-| `productos.service.js`     | `listar`, `crear`, `actualizar`, `movimientos`, `ajuste`                      | Administran catálogo y movimientos, respetando las unidades reservadas.           |
-| `compras.service.js`       | `listarProveedores`, `crearProveedor`, `listar`, `crear`                      | Administran proveedores y guardan compra, inventario y egreso juntos.             |
-| `empleados.service.js`     | `listar`, `crear`, `actualizar`, `listarNomina`, `pagarNomina`                | Administran expedientes y registran salarios por empleado y mes.                  |
-| `finanzas.service.js`      | `listar`, `crear`                                                             | Consultan el libro y sus totales o registran movimientos manuales.                |
-| `ventas.service.js`        | `crear`, `listar`, `capturar`, `cancelar`, `descargarFactura`, `enviarCorreo` | Coordinan reservas, cobros y acceso a las facturas.                               |
-| `paypal.service.js`        | `obtenerToken`, `paypalRequest`, `verificarCaptura`                           | Llaman a PayPal y comprueban identidad, estado, moneda e importe del cobro.       |
-| `facturas.service.js`      | `generarXml`, `enviarFactura`                                                 | Preparan el XML académico y solicitan su envío como archivo adjunto.              |
-| `lib/validacion.js`        | `texto`, `correo`, `entero`, `contrasena`, `carrito`, `fallar`                | Validan datos y detienen una operación con un error controlado.                   |
-| `lib/transaccion.js`       | `transaccion`                                                                 | Confirma todos los cambios relacionados o los revierte si algo falla.             |
+| Archivo                    | Métodos                                                                                    | Qué hacen                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `autenticacion.service.js` | `buscarPorCorreo`, `iniciarSesion`, `registrarUsuario`                                     | Buscan cuentas activas, validan credenciales y crean cuentas con hash y permisos. |
+| `productos.service.js`     | `listar`, `crear`, `actualizar`, `movimientos`, `ajuste`                                   | Administran catálogo y movimientos, respetando las unidades reservadas.           |
+| `compras.service.js`       | `listarProveedores`, `crearProveedor`, `listar`, `crear`                                   | Administran proveedores y guardan compra, inventario y egreso juntos.             |
+| `empleados.service.js`     | `listar`, `crear`, `actualizar`, `listarNomina`, `pagarNomina`                             | Administran expedientes y registran salarios por empleado y mes.                  |
+| `finanzas.service.js`      | `listar`, `crear`                                                                          | Consultan el libro y sus totales o registran movimientos manuales.                |
+| `ventas.service.js`        | `crear`, `listar`, `capturar`, `verificar`, `cancelar`, `descargarFactura`, `enviarCorreo` | Coordinan reservas, cobros y acceso a las facturas.                               |
+| `paypal.service.js`        | `obtenerToken`, `paypalRequest`, `verificarCaptura`, `ordenSinPago`                        | Llaman a PayPal y comprueban identidad, estado, moneda e importe del cobro.       |
+| `facturas.service.js`      | `generarXml`, `enviarFactura`                                                              | Preparan el XML académico y solicitan su envío como archivo adjunto.              |
+| `lib/validacion.js`        | `texto`, `correo`, `entero`, `contrasena`, `carrito`, `fallar`                             | Validan datos y detienen una operación con un error controlado.                   |
+| `lib/transaccion.js`       | `transaccion`                                                                              | Confirma todos los cambios relacionados o los revierte si algo falla.             |
 
 Los controladores suelen usar nombres de método equivalentes a la operación del servicio. Por ejemplo, `productos.controller.js` tiene `crear(solicitud, respuesta)`: recibe los datos HTTP y llama a `productos.service.js`. El método `crear(datos)` del servicio comprueba los datos y ejecuta el INSERT.
 
@@ -192,6 +195,8 @@ PayPal conserva sus claves externas en inglés y solo se usa en Sandbox. Una ope
 
 Configura `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET` y `PORT` en `.env`. MySQL usa el puerto 3306 y la configuración horaria predeterminada del controlador. `PORT` es el puerto HTTP de Express, normalmente 3000 en este proyecto.
 
+La conexión usa `mysql.createPool()` con los mismos cuatro datos: host, usuario, contraseña y base. Cada transacción toma una conexión exclusiva y la devuelve al terminar, también si falla. No mezcla los cambios de dos peticiones.
+
 Los importes se guardan como centavos enteros. Las sumas de finanzas se convierten explícitamente a número porque MySQL puede devolverlas como texto.
 
 ```bash
@@ -199,7 +204,7 @@ npm ci
 npm start
 ```
 
-`npm run dev` inicia el servidor con vigilancia de archivos. `npm test` ejecuta `test/paypal.test.js`: comprueba rutas, permisos, cálculo de precios, reservas, captura, reintentos, fallos de red y recuperación de pagos con MySQL y PayPal simulados. No realiza cobros ni envía correos reales.
+`npm run dev` inicia el servidor con vigilancia de archivos. `npm test` ejecuta `test/ventas.test.js`: prueba los servicios y las transacciones con MySQL, PayPal y correo simulados. Incluye órdenes sin aprobar, recuperación de cobros, cancelaciones desde REVISION, permisos, fallos de red y operaciones simultáneas. No importa `app.js`, no abre puertos y no cambia una base real.
 
 ## PayPal: cómo se crea y se confirma el pago
 
@@ -250,6 +255,8 @@ El checkout envía POST `/api/paypal/orden`. Un ejemplo del cuerpo es:
 5. `paypalRequest('/v2/checkout/orders', 'POST', ...)` crea la orden en PayPal con intención CAPTURE, moneda MXN y el total en pesos con dos decimales. MySQL mantiene los importes como centavos enteros.
 6. Se guarda el ID externo en `sales.paypal_id` y la venta pasa a CREADA. Se devuelve `{ id, idVenta, total }`: `id` es la orden de PayPal e `idVenta` es el folio local.
 
+Si se reintenta el mismo carrito para el mismo cliente y correo desde la misma cuenta, se reutiliza su orden pendiente. No se crea otra venta ni se vuelven a reservar productos. Si todavía se está creando o requiere revisión, se informa al usuario para que consulte el historial. Al confirmar el cobro se actualiza esa misma fila de `sales` a PAGADA.
+
 Por ejemplo, dos productos de 4500 centavos dan 9000 centavos. El importe que se manda a PayPal es `90.00` MXN. Si la creación falla después de guardar la reserva, el código intenta cancelarla y liberar las unidades locales.
 
 ### Capturar y comprobar el cobro
@@ -257,11 +264,11 @@ Por ejemplo, dos productos de 4500 centavos dan 9000 centavos. El importe que se
 Aprobar la ventana de PayPal no marca por sí solo la venta como pagada. El checkout debe enviar POST `/api/paypal/capturar/:orderId`.
 
 1. `capturarOrden()` busca en MySQL la venta relacionada con ese ID externo. `obtenerVenta()` exige ser su propietario o ADMIN.
-2. Antes de contactar a PayPal, `capturar()` guarda REVISION. Así un resultado incierto no permite liberar productos como si nunca hubiera existido un cobro.
+2. `capturar()` utiliza la comprobación compartida de `verificar()`. Reserva una conexión de MySQL y bloquea la venta con `FOR UPDATE` hasta terminar de comprobar PayPal. Así una captura y una cancelación de la misma venta no se cruzan. Si falla la comunicación, confirma REVISION antes de devolver el error.
 3. Consulta GET `/v2/checkout/orders/:orderId`. Si PayPal responde APPROVED, solicita POST a `/v2/checkout/orders/:orderId/capture`. Si ya estaba completada, comprueba el resultado obtenido.
 4. `verificarCaptura()` exige la misma orden, estado COMPLETED, exactamente una captura completada con ID, moneda MXN e importe igual al total guardado.
 5. Solo entonces se confirma la venta en una transacción: marca PAGADA, guarda el ID del cobro, descuenta existencias, reduce reservas y registra el ingreso en finanzas.
-6. `confirmarVenta()` comprueba si ya estaba PAGADA para no descontar ni registrar el ingreso otra vez. Además se reutiliza el folio como `PayPal-Request-Id`, que permite reconocer reintentos de una misma operación en PayPal.
+6. `confirmarVenta()` comprueba si ya estaba PAGADA para no descontar ni registrar el ingreso otra vez. Además se usa `folio:crear` al crear la orden y `folio:capturar` al capturar, como `PayPal-Request-Id`. Cada operación conserva su propia clave para los reintentos.
 7. Después de confirmar, `notificar()` intenta enviar la factura. El controlador responde `{ mensaje, orderId, captureId, estado, idVenta, estadoCorreo }` al checkout.
 
 `orderId` identifica la orden de PayPal; `captureId` identifica su cobro; `idVenta` identifica la venta de CoffeERP. Las rutas del historial siguen usando el folio local y mantienen sus respuestas anteriores.
@@ -276,11 +283,11 @@ Aprobar la ventana de PayPal no marca por sí solo la venta como pagada. El chec
 | PAGADA                   | Se verificó el cobro y se registraron inventario e ingreso.                                        |
 | CANCELADA                | Se canceló la reserva local y se liberaron sus unidades.                                           |
 
-Un fallo de comunicación no demuestra que PayPal no haya cobrado. Ante un resultado incierto, se conserva REVISION. El botón **Verificar pago** usa POST `/api/ventas/:id/capturar` para consultar o capturar por el folio local. No hay una comprobación periódica automática ni un webhook que procese avisos de PayPal; la recuperación actual se hace solicitando esa verificación.
+Un fallo de comunicación no demuestra que PayPal no haya cobrado. Ante un resultado incierto, se conserva REVISION. El botón **Verificar pago** usa POST `/api/ventas/:id/verificar` para consultar o capturar por el folio local. Esta ruta devuelve 200 con el estado real si PayPal responde: una orden todavía sin aprobar se informa como CREADA, no como un pago confirmado ni como una revisión permanente. La captura del checkout conserva su error 409 si no hay un pago confirmado. No hay una comprobación periódica automática ni un webhook que procese avisos de PayPal; la recuperación actual se hace solicitando esa verificación.
 
-POST `/api/ventas/:id/cancelar` consulta el estado de PayPal antes de intentar liberar la reserva. Rechaza pagos aprobados o inciertos y no cancela una venta PAGADA o en REVISION. Cerrar la ventana de PayPal tampoco libera automáticamente las unidades. Esta operación de reserva no realiza devoluciones de cobros completados.
+POST `/api/ventas/:id/cancelar` bloquea la venta y consulta PayPal antes de liberar sus unidades. Puede cancelar CREADA y también REVISION si `ordenSinPago()` confirma la identidad de la orden, un estado sin pagar y la ausencia de capturas y autorizaciones. Rechaza una venta PAGADA, un pago aprobado o una respuesta incompleta o incierta. Una venta CREANDO que todavía no tiene orden se puede cancelar; la creación comprueba su estado antes de guardar la respuesta para no reactivarla después. Repetir una cancelación ya realizada no vuelve a liberar productos. Cerrar PayPal no cancela automáticamente la reserva y esta operación no realiza devoluciones.
 
-Las llamadas tienen un tiempo máximo de espera. Si el proveedor no confirma la operación, el backend puede devolver 502; si el pago no pasa la verificación, devuelve 409. Las órdenes se conservan en MySQL y sobreviven a un reinicio de Express.
+Las llamadas tienen un tiempo máximo de espera. Una falla de comunicación devuelve 502 y deja REVISION. Si la consulta responde con datos insuficientes para confirmar un cobro, la ruta de verificación devuelve REVISION con un mensaje explicativo; la captura del checkout devuelve 409. Una orden VOIDED sin cobros libera la reserva y pasa a CANCELADA. Las órdenes se conservan en MySQL y sobreviven a un reinicio de Express.
 
 ## Envío de correos: cómo se prepara y se manda el XML
 

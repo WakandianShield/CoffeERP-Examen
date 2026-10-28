@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ServicioApi } from '../../../services/api.service';
 import { Venta } from '../model/venta.model';
+import { ResultadoOperacionVenta } from '../model/resultado-operacion-venta.model';
 
 @Injectable({ providedIn: 'root' })
 export class VentasService {
@@ -13,10 +14,16 @@ export class VentasService {
     return this.api.obtener<Venta[]>('/ventas');
   }
   verificarPago(id: string) {
-    return this.api.crear(`/ventas/${encodeURIComponent(id)}/capturar`, {});
+    return this.api.crear<ResultadoOperacionVenta>(
+      `/ventas/${encodeURIComponent(id)}/verificar`,
+      {},
+    );
   }
   cancelar(id: string) {
-    return this.api.crear(`/ventas/${encodeURIComponent(id)}/cancelar`, {});
+    return this.api.crear<ResultadoOperacionVenta>(
+      `/ventas/${encodeURIComponent(id)}/cancelar`,
+      {},
+    );
   }
   enviarCorreo(id: string) {
     return this.api.crear(`/ventas/${encodeURIComponent(id)}/correo`, {});

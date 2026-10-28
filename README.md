@@ -197,7 +197,7 @@ Requiere Node.js compatible con Angular 21 (por ejemplo, Node 22.12+ o 24), npm 
    mysql -u root -p coffe_erp_exam -e "source back-erp/sql/schema.sql"
    ```
 
-   El script crea tablas que falten. No cambia la estructura de tablas existentes.
+   El script crea tablas que falten. No cambia la estructura de tablas existentes. Si ya tienes una base antigua sin la columna de permisos de usuarios, ejecuta también `back-erp/sql/actualizar-usuarios.sql` en esa base; conserva las cuentas existentes y corrige el error `ER_BAD_FIELD_ERROR` al crear usuarios.
 
 3. Prepara el backend:
 
@@ -226,7 +226,7 @@ Requiere Node.js compatible con Angular 21 (por ejemplo, Node 22.12+ o 24), npm 
    VALUES ('Administrador','TU_CORREO','EL_HASH_GENERADO','ADMIN','VENTAS,COMPRAS,INVENTARIO,RRHH,FINANZAS');
    ```
 
-   Las variables `ADMIN_EMAIL` y `ADMIN_PASSWORD` del ejemplo sirven como referencia de preparación; el arranque actual no crea la cuenta automáticamente. Las cuentas creadas desde el sistema requieren contraseñas de 10 a 72 caracteres, con mayúscula, número y símbolo.
+   Las variables `ADMIN_EMAIL` y `ADMIN_PASSWORD` del ejemplo sirven como referencia de preparación; el arranque actual no crea la cuenta automáticamente. Las cuentas creadas desde el sistema solo requieren una contraseña de al menos 3 caracteres, sin exigir mayúsculas, números ni símbolos.
 
 5. Ejecuta `npm start` desde `back-erp`. En otra terminal, desde `coffeERP`, ejecuta `npm ci` y `npm start`. Abre `http://localhost:4200`; el proxy envía `/api` a `http://127.0.0.1:3000`.
 
@@ -246,10 +246,10 @@ Reinicia el backend después de cambiar `.env`. Las claves secretas permanecen e
 
 Desde `coffeERP`, ejecuta `npm run build`. Para revisar el funcionamiento, inicia ambos proyectos y comprueba inicio de sesión, acceso por módulos, guardado de registros y cierre de sesión. Usa una cuenta CAJERO con permisos limitados para comprobar las respuestas 403 y la visibilidad del menú.
 
-`npm test` desde `back-erp` comprueba el flujo PayPal con rutas, controladores y servicios reales, usando MySQL y el proveedor simulados. `npm test` desde `coffeERP` ejecuta nueve pruebas de acceso, roles y menú en `src/pruebas/guards.spec.ts`, y ocho pruebas del checkout y su servicio con el SDK simulado. Estas pruebas no realizan cobros ni envíos de correo y no equivalen a una validación con proveedores reales.
+`npm test` desde `back-erp` comprueba verificación, captura, cancelación y operaciones simultáneas con servicios reales y MySQL, PayPal y correo simulados. `npm test` desde `coffeERP` comprueba los botones y mensajes del historial en `src/pruebas/ventas.spec.ts`. Las pruebas no inician los servidores de la aplicación ni realizan cobros o envíos reales.
 
 ## Alcance actual
 
-El checkout está en `coffeERP/src/app/componentes/ventas/checkout` y sigue el flujo de creación y captura del [SDK v6 de PayPal](https://developer.paypal.com/sdk/js/set-up/). Recibe el carrito y los datos reales de Ventas. `PayPalService` envía las órdenes a `/api/paypal/orden` y captura por el ID externo en `/api/paypal/capturar/:orderId`. La captura del checkout devuelve `orderId` y `captureId`, como el ejemplo de PayPal, además de `idVenta` y `estadoCorreo` para el historial y las facturas. El servidor conserva las ventas en MySQL, verifica permisos e importe y mantiene las reservas de pagos inciertos. Las rutas del historial de ventas siguen disponibles para verificar pagos y consultar facturas.
+El checkout está en `coffeERP/src/app/componentes/ventas/checkout` y sigue el flujo de creación y captura del [SDK v6 de PayPal](https://developer.paypal.com/sdk/js/set-up/). Recibe el carrito y los datos reales de Ventas. `PayPalService` envía las órdenes a `/api/paypal/orden` y captura por el ID externo en `/api/paypal/capturar/:orderId`. La captura del checkout devuelve `orderId` y `captureId`, como el ejemplo de PayPal, además de `idVenta` y `estadoCorreo` para el historial y las facturas. El servidor conserva las ventas en MySQL, verifica permisos e importe y mantiene las reservas de pagos inciertos. El historial usa POST `/api/ventas/:id/verificar`: muestra el estado real y recupera pagos sin duplicarlos. Cancelar reserva también se ofrece en REVISION, pero solo libera productos cuando PayPal confirma una orden sin cobros ni autorizaciones. Las operaciones de una misma venta se bloquean para no cruzar una captura con su cancelación.
 
 No incluye contabilidad de doble partida, impuestos, timbrado CFDI, devoluciones ni cobros de producción. La interfaz de compras captura un producto por operación; la API admite varios distintos. No libera automáticamente una reserva con pago incierto. Un reintento de correo puede duplicar el mensaje si el proveedor lo aceptó antes de perderse la respuesta.

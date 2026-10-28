@@ -1,13 +1,14 @@
 import { VentasService } from './servicios/ventas.service';
 import { ProductosService } from '../../services/productos.service';
 // PANTALLA DE VENTAS: MUESTRA PRODUCTOS, ARMA EL CARRITO Y PERMITE PAGAR O REVISAR PAGOS ANTERIORES.
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EstadoFormularioService } from '../../services/estado-formulario.service';
 import { Producto } from '../../models/producto.model';
 import { Venta } from './model/venta.model';
 import { ProductoCarrito } from './model/producto-carrito.model';
 import { ResultadoPago } from './model/resultado-pago.model';
+import { ResultadoOperacionVenta } from './model/resultado-operacion-venta.model';
 import { CheckoutComponent } from './checkout/checkout.component';
 @Component({
   selector: 'app-ventas',
@@ -17,6 +18,7 @@ import { CheckoutComponent } from './checkout/checkout.component';
   styleUrl: './ventas.component.css',
 })
 export class VentasComponent implements OnInit {
+  @ViewChild(CheckoutComponent) checkout?: CheckoutComponent;
   formulario = inject(EstadoFormularioService);
   productosService = inject(ProductosService);
   ventasService = inject(VentasService);
@@ -90,6 +92,10 @@ export class VentasComponent implements OnInit {
   actualizar() {
     void this.formulario.ejecutar(() => this.cargar(), '');
   }
+  // ABRE EL PAGO DE LA RESERVA SELECCIONADA SIN VOLVER A REGISTRAR EL PEDIDO.
+  pagarPendiente(venta: Venta) {
+    if (!this.formulario.ocupado() && venta.idPaypal) void this.checkout?.pagar(venta.idPaypal);
+  }
   // SOLICITA LA DESCARGA DE LA FACTURA XML DE LA VENTA SELECCIONADA.
   xml(id: string) {
     void this.formulario.ejecutar(
@@ -106,17 +112,33 @@ export class VentasComponent implements OnInit {
   }
   // PIDE AL SERVIDOR QUE REVISE EL PAGO EN PAYPAL ANTES DE DARLO POR COMPLETADO.
   verificar(id: string) {
-    void this.formulario.ejecutar(async () => {
-      await this.ventasService.verificarPago(id);
-      await this.cargar();
-    }, 'Pago confirmado');
+    let resultado: ResultadoOperacionVenta | undefined;
+    void this.formulario.ejecutar(
+      async () => {
+        try {
+          resultado = await this.ventasService.verificarPago(id);
+          if (resultado.estado === 'PAGADA') this.carrito.set([]);
+        } finally {
+          // UN ERROR TAMBIEN PUEDE HABER DEJADO LA VENTA EN REVISION EN EL SERVIDOR.
+          await this.cargar();
+        }
+      },
+      () => resultado?.mensaje || 'Estado del pago actualizado',
+    );
   }
   // PIDE CONFIRMACION AL USUARIO Y SOLICITA CANCELAR LA RESERVA PARA RECUPERAR LAS UNIDADES.
   cancelar(id: string) {
     if (!confirm('¿Cancelar esta reserva y liberar existencias?')) return;
-    void this.formulario.ejecutar(async () => {
-      await this.ventasService.cancelar(id);
-      await this.cargar();
-    }, 'Reserva cancelada');
+    let resultado: ResultadoOperacionVenta | undefined;
+    void this.formulario.ejecutar(
+      async () => {
+        try {
+          resultado = await this.ventasService.cancelar(id);
+        } finally {
+          await this.cargar();
+        }
+      },
+      () => resultado?.mensaje || 'Reserva cancelada',
+    );
   }
 }

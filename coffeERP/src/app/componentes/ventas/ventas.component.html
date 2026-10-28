@@ -153,6 +153,15 @@
                     </button>
                   }
                 } @else if (s.estado !== 'CANCELADA') {
+                  @if (s.estado === 'CREADA' && s.idPaypal) {
+                    <button
+                      class="secundario"
+                      [disabled]="formulario.ocupado() || !checkout?.listo()"
+                      (click)="pagarPendiente(s)"
+                    >
+                      Pagar
+                    </button>
+                  }
                   <button
                     class="secundario"
                     [disabled]="formulario.ocupado()"
@@ -160,7 +169,7 @@
                   >
                     Verificar pago
                   </button>
-                  @if (s.estado === 'CREADA' || s.estado === 'CREANDO') {
+                  @if (s.estado === 'CREADA' || s.estado === 'CREANDO' || s.estado === 'REVISION') {
                     <button
                       class="secundario"
                       [disabled]="formulario.ocupado()"

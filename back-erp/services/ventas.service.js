@@ -40,12 +40,25 @@ async function obtenerDetalles(id, conexion = baseDatos) {
 async function confirmarVenta(conexion, venta, idCaptura = null) {
   // ESTA SALIDA EVITA DESCONTAR PRODUCTOS O REGISTRAR EL INGRESO OTRA VEZ AL REPETIR LA CONFIRMACION.
   if (venta.estado === "PAGADA") return;
+  if (venta.estado === "CANCELADA")
+    validar.fallar("La reserva ya está cancelada", 409);
   const detalles = await obtenerDetalles(venta.id, conexion);
   for (const detalle of detalles) {
-    await conexion.execute(
-      "UPDATE products SET stock=stock-?,reserved=reserved-? WHERE id=?",
-      [detalle.cantidad, detalle.cantidad, detalle.idProducto],
+    const [actualizacion] = await conexion.execute(
+      "UPDATE products SET stock=stock-?,reserved=reserved-? WHERE id=? AND stock>=? AND reserved>=?",
+      [
+        detalle.cantidad,
+        detalle.cantidad,
+        detalle.idProducto,
+        detalle.cantidad,
+        detalle.cantidad,
+      ],
     );
+    if (!actualizacion.affectedRows)
+      validar.fallar(
+        "No se pudo confirmar el inventario; revisa la reserva de esta venta",
+        409,
+      );
     await conexion.execute(
       "INSERT INTO stock_movements(product_id,quantity,reason) VALUES(?,?,?)",
       [detalle.idProducto, -detalle.cantidad, `Venta ${venta.id}`],
@@ -83,7 +96,44 @@ async function crear(datos, usuario, metodo) {
   )
     validar.fallar("Configura PayPal Sandbox en el backend", 503);
   const id = randomUUID();
-  await transaccion(async (conexion) => {
+  const pendiente = await transaccion(async (conexion) => {
+    if (metodo === "PAYPAL") {
+      // ORDENA LAS PETICIONES DE ESTA CUENTA PARA NO CREAR DOS RESERVAS AL REINTENTAR.
+      await conexion.execute("SELECT id FROM users WHERE id=? FOR UPDATE", [
+        usuario.id,
+      ]);
+      const [pendientes] = await conexion.execute(
+        "SELECT * FROM sales WHERE user_id=? AND customer=? AND email=? AND method='PAYPAL' AND status IN ('CREANDO','CREADA','REVISION') ORDER BY created_at DESC FOR UPDATE",
+        [usuario.id, cliente, correo],
+      );
+      for (const fila of pendientes) {
+        const detalles = await obtenerDetalles(fila.id, conexion);
+        const mismoCarrito =
+          detalles.length === carrito.length &&
+          detalles.every(
+            (detalle, indice) =>
+              detalle.idProducto === carrito[indice].id &&
+              detalle.cantidad === carrito[indice].cantidad,
+          );
+        if (!mismoCarrito) continue;
+        if (fila.status === "REVISION")
+          validar.fallar(
+            "Este pedido tiene un pago en revisión. Usa Verificar pago antes de volver a pagar.",
+            409,
+          );
+        if (!fila.paypal_id)
+          validar.fallar(
+            "La orden de este pedido se está preparando. Actualiza el historial antes de reintentar.",
+            409,
+          );
+        // DEVUELVE LA MISMA ORDEN SIN INSERTAR OTRA VENTA NI RESERVAR PRODUCTOS OTRA VEZ.
+        return {
+          id: fila.paypal_id,
+          idVenta: fila.id,
+          total: (fila.total_cents / 100).toFixed(2),
+        };
+      }
+    }
     let total = 0;
     const detalles = [];
 
@@ -130,6 +180,7 @@ async function crear(datos, usuario, metodo) {
         estado: "CREANDO",
       });
   });
+  if (pendiente) return pendiente;
   if (metodo === "EFECTIVO") {
     const estadoCorreo = await notificar(id, usuario);
     return { id, mensaje: "Venta pagada en efectivo", estadoCorreo };
@@ -152,13 +203,19 @@ async function crear(datos, usuario, metodo) {
           },
         ],
       },
-      id,
+      `${id}:crear`,
     );
     if (!orden.id) validar.fallar("PayPal no devolvió una orden", 502);
-    await baseDatos.execute(
-      "UPDATE sales SET paypal_id=?,status='CREADA' WHERE id=?",
+    const [actualizacion] = await baseDatos.execute(
+      "UPDATE sales SET paypal_id=?,status='CREADA' WHERE id=? AND status='CREANDO'",
       [orden.id, id],
     );
+    // NO REACTIVA UNA RESERVA QUE SE CANCELO MIENTRAS PAYPAL CREABA LA ORDEN.
+    if (!actualizacion.affectedRows)
+      validar.fallar(
+        "La reserva se canceló antes de terminar de crear la orden",
+        409,
+      );
     return {
       id: orden.id,
       idVenta: id,
@@ -170,7 +227,31 @@ async function crear(datos, usuario, metodo) {
     throw error;
   }
 }
-// LIBERA LAS UNIDADES RESERVADAS Y MARCA LA VENTA CANCELADA SI EL PAGO NO ESTA CONFIRMADO NI EN REVISION.
+// LIBERA CADA RESERVA UNA SOLA VEZ; LA VENTA SE LEE CON BLOQUEO EN LA MISMA TRANSACCION.
+async function liberarReserva(conexion, venta) {
+  if (venta.estado === "CANCELADA") return;
+  if (venta.estado === "PAGADA")
+    validar.fallar(
+      "La venta ya está pagada y no se puede cancelar su reserva",
+      409,
+    );
+  for (const detalle of await obtenerDetalles(venta.id, conexion)) {
+    const [actualizacion] = await conexion.execute(
+      "UPDATE products SET reserved=reserved-? WHERE id=? AND reserved>=?",
+      [detalle.cantidad, detalle.idProducto, detalle.cantidad],
+    );
+    if (!actualizacion.affectedRows)
+      validar.fallar(
+        "No se pudo liberar el inventario; revisa la reserva de esta venta",
+        409,
+      );
+  }
+  await conexion.execute("UPDATE sales SET status='CANCELADA' WHERE id=?", [
+    venta.id,
+  ]);
+}
+
+// DESHACE LA RESERVA SI NO SE PUDO CREAR Y ENTREGAR LA ORDEN DE PAYPAL.
 async function cancelarReserva(id, usuario) {
   await transaccion(async (conexion) => {
     const venta = await obtenerVenta(id, usuario, conexion, true);
@@ -178,64 +259,107 @@ async function cancelarReserva(id, usuario) {
     // NO LIBERA PRODUCTOS SI EL COBRO YA SE CONFIRMO O SI SU RESULTADO TODAVIA ES INCIERTO.
     if (["PAGADA", "REVISION"].includes(venta.estado))
       validar.fallar("Verifica el pago antes de cancelar", 409);
-    for (const detalle of await obtenerDetalles(id, conexion))
-      await conexion.execute(
-        "UPDATE products SET reserved=reserved-? WHERE id=?",
-        [detalle.cantidad, detalle.idProducto],
-      );
-    await conexion.execute("UPDATE sales SET status='CANCELADA' WHERE id=?", [
-      id,
-    ]);
+    await liberarReserva(conexion, venta);
   });
 }
-// CONSULTA O CAPTURA EL PAGO EN PAYPAL, COMPRUEBA EL RESULTADO Y SOLO ENTONCES CONFIRMA LA VENTA.
-async function capturar(id, usuario) {
-  // GUARDA EL ESTADO REVISION ANTES DE CONSULTAR PAYPAL PARA NO CANCELAR UNA VENTA CON COBRO INCIERTO.
-  const venta = await transaccion(async (conexion) => {
+
+// LA CONSULTA Y LA CONFIRMACION COMPARTEN EL BLOQUEO PARA NO CRUZARSE CON UNA CANCELACION.
+async function verificar(id, usuario) {
+  const resultado = await transaccion(async (conexion) => {
     const venta = await obtenerVenta(id, usuario, conexion, true);
-    if (venta.estado === "PAGADA") return venta;
-    if (!venta.idPaypal || venta.estado === "CANCELADA")
-      validar.fallar("Orden no disponible para captura", 409);
+    const respuesta = {
+      id,
+      idVenta: id,
+      idOrden: venta.idPaypal,
+      idCaptura: venta.idCaptura,
+      estado: venta.estado,
+      estadoCorreo: venta.estadoCorreo,
+    };
+    if (venta.estado === "PAGADA")
+      return { ...respuesta, mensaje: "Pago confirmado" };
+    if (venta.estado === "CANCELADA")
+      return { ...respuesta, mensaje: "La reserva ya está cancelada" };
+    if (!venta.idPaypal)
+      return {
+        ...respuesta,
+        mensaje:
+          "La venta todavía no tiene una orden de PayPal disponible para comprobar.",
+      };
+
     await conexion.execute("UPDATE sales SET status='REVISION' WHERE id=?", [
       id,
     ]);
-    return venta;
-  });
-  let idCaptura = venta.idCaptura;
-  if (venta.estado !== "PAGADA") {
-    let resultado = await paypal.paypalRequest(
-      `/v2/checkout/orders/${encodeURIComponent(venta.idPaypal)}`,
-    );
-    if (resultado.status === "APPROVED")
-      resultado = await paypal.paypalRequest(
-        `/v2/checkout/orders/${encodeURIComponent(venta.idPaypal)}/capture`,
-        "POST",
-        {},
+    let orden;
+    try {
+      orden = await paypal.paypalRequest(
+        `/v2/checkout/orders/${encodeURIComponent(venta.idPaypal)}`,
+      );
+      if (!orden || orden.id !== venta.idPaypal)
+        validar.fallar(
+          "PayPal devolvió otra orden; el pago sigue en revisión",
+          409,
+        );
+      if (orden.status === "APPROVED") {
+        orden = await paypal.paypalRequest(
+          `/v2/checkout/orders/${encodeURIComponent(venta.idPaypal)}/capture`,
+          "POST",
+          {},
+          `${id}:capturar`,
+        );
+      }
+    } catch (error) {
+      // CONFIRMA REVISION ANTES DE DEVOLVER UN FALLO DE COMUNICACION AL NAVEGADOR.
+      return { error };
+    }
+
+    const captura = paypal.verificarCaptura(orden, venta);
+    if (captura) {
+      await confirmarVenta(conexion, venta, captura.id);
+      return {
+        ...respuesta,
+        estado: "PAGADA",
+        idCaptura: captura.id,
+        mensaje: "Pago confirmado",
+      };
+    }
+    if (paypal.ordenSinPago(orden, venta)) {
+      if (orden.status === "VOIDED") {
+        await liberarReserva(conexion, venta);
+        return {
+          ...respuesta,
+          estado: "CANCELADA",
+          mensaje: "La orden de PayPal está anulada; se liberó la reserva",
+        };
+      }
+      // UNA ORDEN SIN APROBAR NO ES UN COBRO INCIERTO Y PUEDE VOLVER A CREADA.
+      await conexion.execute("UPDATE sales SET status='CREADA' WHERE id=?", [
         id,
-      );
-    // REVISA QUE EL COBRO ESTE COMPLETADO Y QUE SU ID, MONEDA E IMPORTE CORRESPONDAN A ESTA VENTA.
-    const captura = paypal.verificarCaptura(resultado, venta);
-    if (!captura)
-      validar.fallar(
-        "Pago pendiente de verificación; no se registró como pagado",
-        409,
-      );
-    idCaptura = captura.id;
-    // VUELVE A LEER LA VENTA CON BLOQUEO ANTES DE APLICAR EL COBRO Y ACTUALIZAR EL INVENTARIO.
-    await transaccion(async (conexion) => {
-      const actual = await obtenerVenta(id, usuario, conexion, true);
-      await confirmarVenta(conexion, actual, captura.id);
-    });
-  }
-  return {
-    id,
-    idVenta: id,
-    idOrden: venta.idPaypal,
-    idCaptura,
-    estado: "PAGADA",
-    mensaje: "Pago completado",
-    estadoCorreo: await notificar(id, usuario),
-  };
+      ]);
+      return {
+        ...respuesta,
+        estado: "CREADA",
+        mensaje:
+          "El pago todavía no está aprobado en PayPal. Puedes completar el pago o cancelar la reserva.",
+      };
+    }
+    return {
+      ...respuesta,
+      estado: "REVISION",
+      mensaje:
+        "PayPal aún no confirma un cobro válido. La reserva se conserva; vuelve a verificar el pago.",
+    };
+  });
+  if (resultado.error) throw resultado.error;
+  if (resultado.estado === "PAGADA")
+    resultado.estadoCorreo = await notificar(id, usuario);
+  return resultado;
+}
+
+// EL CHECKOUT SOLO RECIBE EXITO CUANDO EL PAGO REALMENTE QUEDO CONFIRMADO.
+async function capturar(id, usuario) {
+  const resultado = await verificar(id, usuario);
+  if (resultado.estado !== "PAGADA") validar.fallar(resultado.mensaje, 409);
+  return resultado;
 }
 
 // RELACIONA EL ID DE PAYPAL CON LA VENTA GUARDADA; CAPTURAR VUELVE A COMPROBAR SU PROPIETARIO.
@@ -263,21 +387,61 @@ function configuracion() {
 
 // CONSULTA EL ESTADO DE PAYPAL ANTES DE INTENTAR LIBERAR LOS PRODUCTOS RESERVADOS.
 async function cancelar(id, usuario) {
-  const venta = await obtenerVenta(id, usuario);
-
-  if (venta.idPaypal && venta.estado !== "CANCELADA") {
-    const orden = await paypal.paypalRequest(
-      `/v2/checkout/orders/${encodeURIComponent(venta.idPaypal)}`,
-    );
-    if (
-      !["CREATED", "SAVED", "PAYER_ACTION_REQUIRED", "VOIDED"].includes(
-        orden.status,
-      )
-    )
-      validar.fallar("Pago aprobado o incierto: usa Verificar pago", 409);
-  }
-  await cancelarReserva(id, usuario);
-  return { mensaje: "Reserva cancelada" };
+  const resultado = await transaccion(async (conexion) => {
+    const venta = await obtenerVenta(id, usuario, conexion, true);
+    if (venta.estado === "CANCELADA")
+      return {
+        idVenta: id,
+        estado: "CANCELADA",
+        mensaje: "La reserva ya estaba cancelada",
+      };
+    if (venta.estado === "PAGADA")
+      validar.fallar(
+        "La venta ya está pagada. No se puede cancelar su reserva.",
+        409,
+      );
+    if (venta.idPaypal) {
+      let orden;
+      try {
+        orden = await paypal.paypalRequest(
+          `/v2/checkout/orders/${encodeURIComponent(venta.idPaypal)}`,
+        );
+      } catch (error) {
+        await conexion.execute(
+          "UPDATE sales SET status='REVISION' WHERE id=?",
+          [id],
+        );
+        return { error };
+      }
+      if (!paypal.ordenSinPago(orden, venta)) {
+        await conexion.execute(
+          "UPDATE sales SET status='REVISION' WHERE id=?",
+          [id],
+        );
+        return {
+          error: Object.assign(
+            new Error(
+              "No se puede cancelar: PayPal no confirma que la orden esté sin cobros. Usa Verificar pago.",
+            ),
+            { status: 409 },
+          ),
+        };
+      }
+    } else if (venta.estado !== "CREANDO") {
+      validar.fallar(
+        "La venta no tiene una orden de PayPal que se pueda comprobar; revisa su registro antes de cancelarla",
+        409,
+      );
+    }
+    await liberarReserva(conexion, venta);
+    return {
+      idVenta: id,
+      estado: "CANCELADA",
+      mensaje: "Reserva cancelada; las existencias están disponibles de nuevo",
+    };
+  });
+  if (resultado.error) throw resultado.error;
+  return resultado;
 }
 
 // EXIGE UNA VENTA PAGADA Y CON ACCESO PERMITIDO ANTES DE OBTENER SUS DATOS Y DETALLES.
@@ -304,6 +468,7 @@ module.exports = {
   listar,
   crear,
   capturar,
+  verificar,
   capturarOrden,
   cancelar,
   descargarFactura,

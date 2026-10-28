@@ -8,14 +8,17 @@ export class EstadoFormularioService {
   mensaje = signal('');
   error = signal(false);
   // EVITA ENVIOS DOBLES, EJECUTA LA OPERACION Y MUESTRA SU RESULTADO; AL TERMINAR HABILITA LOS BOTONES.
-  async ejecutar(operacion: () => Promise<unknown>, mensajeExito = 'Cambios guardados') {
+  async ejecutar(
+    operacion: () => Promise<unknown>,
+    mensajeExito: string | (() => string) = 'Cambios guardados',
+  ) {
     if (this.ocupado()) return;
     this.ocupado.set(true);
     this.mensaje.set('');
     this.error.set(false);
     try {
       await operacion();
-      this.mensaje.set(mensajeExito);
+      this.mensaje.set(typeof mensajeExito === 'function' ? mensajeExito() : mensajeExito);
     } catch (e: any) {
       this.error.set(true);
       this.mensaje.set(e.error?.mensaje || e.message || 'No se pudo completar la operación');
